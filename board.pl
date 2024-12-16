@@ -75,7 +75,7 @@ replace_nth([H|T], N, Elem, [H|NewT]) :-
     N1 is N - 1,
     replace_nth(T, N1, Elem, NewT).
 
-spin_square([[A, B, C, D], [C, A, D, B]]) :- !.
+spin_square([A, B, C, D], [C, A, D, B]) :- !.
 
 spin_row(Row, Board, NewBoard) :-
     Start is 4 * (Row - 1) + 1,
