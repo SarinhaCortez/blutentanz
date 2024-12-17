@@ -32,7 +32,8 @@ get_square(N, Board, Square) :-
 %displaying the board
 print_board(Board) :-
     nl,
-    format(' _______________ ~n', []),
+    format('   A   B   C   D  ~n', []),
+    format('  _______________ ~n', []),
     print_board(Board, 1),
     nl. 
 print_board(_, N) :- N > 16, !. 
@@ -42,25 +43,21 @@ print_board(Board, N) :-
     N1 is N + 1, get_square(N1, Board, Square2),
     N2 is N + 2, get_square(N2, Board, Square3),
     N3 is N + 3, get_square(N3, Board, Square4),
-    format_square_pretty(Square1, Square2, Square3, Square4),
+    P is (N div 4) + 1,
+    format_square(Square1, Square2, Square3, Square4, P),
     print_board(Board, NNext).
 
 %formatting options
-format_square_og(Square1, Square2, Square3, Square4) :-
+
+format_square(Square1, Square2, Square3, Square4, N) :-
+
     Square1 = [Sq1_1, Sq1_2, Sq1_3, Sq1_4],
     Square2 = [Sq2_1, Sq2_2, Sq2_3, Sq2_4],
     Square3 = [Sq3_1, Sq3_2, Sq3_3, Sq3_4],
     Square4 = [Sq4_1, Sq4_2, Sq4_3, Sq4_4],
-    format('~w ~w ~w ~w~n', [[Sq1_1, Sq1_2], [Sq2_1, Sq2_2], [Sq3_1, Sq3_2], [Sq4_1, Sq4_2]]),
-    format('~w ~w ~w ~w~n', [[Sq1_3, Sq1_4], [Sq2_3, Sq2_4], [Sq3_3, Sq3_4], [Sq4_3, Sq4_4]]), !.
-format_square_pretty(Square1, Square2, Square3, Square4) :-
-    Square1 = [Sq1_1, Sq1_2, Sq1_3, Sq1_4],
-    Square2 = [Sq2_1, Sq2_2, Sq2_3, Sq2_4],
-    Square3 = [Sq3_1, Sq3_2, Sq3_3, Sq3_4],
-    Square4 = [Sq4_1, Sq4_2, Sq4_3, Sq4_4],
-    format('|~w ~w|~w ~w|~w ~w|~w ~w|~n', [Sq1_1, Sq1_2, Sq2_1, Sq2_2, Sq3_1, Sq3_2, Sq4_1, Sq4_2]),
-    format('|~w ~w|~w ~w|~w ~w|~w ~w|~n', [Sq1_3, Sq1_4, Sq2_3, Sq2_4, Sq3_3, Sq3_4, Sq4_3, Sq4_4]),
-    format(' _______________ ~n', []).
+    format('~w|~w ~w|~w ~w|~w ~w|~w ~w|~n', [N, Sq1_1, Sq1_2, Sq2_1, Sq2_2, Sq3_1, Sq3_2, Sq4_1, Sq4_2]),
+    format(' |~w ~w|~w ~w|~w ~w|~w ~w|~n', [Sq1_3, Sq1_4, Sq2_3, Sq2_4, Sq3_3, Sq3_4, Sq4_3, Sq4_4]),
+    format('  _______________ ~n', []).
 
 %logic for spinning the squares
 
