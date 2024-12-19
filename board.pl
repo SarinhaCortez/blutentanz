@@ -76,11 +76,17 @@ format_square(Square1, Square2, Square3, Square4, N) :-
 
 format_color('*') :- 
     print_in_color(cyan, '*'), !. 
+    
 format_color('+') :- 
     print_in_color(b_magenta, '+'), !.
 
 format_color('-') :-
     print_in_color(black, '-'), !.
+%print players
+format_color('8') :- 
+    print_in_color(b_magenta, '8'), !. 
+format_color('9') :- 
+    print_in_color(cyan, '8'), !. 
 
 format_color(X) :- 
     print_in_color(white, X).      % Default color for any other character
@@ -126,5 +132,5 @@ spin_column_aux(Pos, End, Board, NewBoard) :-
 
 
 
-% board(Board), spin_column(1, Board, NewBoard), print_board(NewBoard).
+% board(Board), shuffle_board(Board, ShuffledBoard), spin_column(1, ShuffledBoard, NewBoard), print_board(NewBoard).
 
