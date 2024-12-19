@@ -4,22 +4,22 @@
 :- consult(colors).
 
 board([
-  [' ', ' ', '#', ' '],
-  ['#', ' ', ' ', ' '],
-  [' ', ' ', ' ', '#'],
-  [' ', '#', ' ', ' '],
-  [' ', ' ', '#', ' '],
-  ['#', ' ', ' ', ' '],
-  [' ', ' ', ' ', '#'],
-  [' ', '#', ' ', ' '],
-  [' ', ' ', '#', ' '],
-  ['#', ' ', ' ', ' '],
-  [' ', '#', ' ', ' '],
-  [' ', '#', ' ', ' '],
-  ['#', ' ', ' ', ' '],
-  [' ', ' ', '#', ' '],
-  [' ', ' ', ' ', '#'],
-  [' ', '#', ' ', ' ']
+  ['+', '-', ' ', '*'],
+  [' ', '+', '*', '-'],
+  ['-', '*', '+', ' '],
+  ['*', ' ', '-', '+'],
+  ['+', '-', ' ', '*'],
+  [' ', '+', '*', '-'],
+  ['-', '*', '+', ' '],
+  ['*', ' ', '-', '+'],
+  ['+', '-', ' ', '*'],
+  [' ', '+', '*', '-'],
+  ['-', '*', '+', ' '],
+  ['*', ' ', '-', '+'],
+  ['+', '-', ' ', '*'],
+  [' ', '+', '*', '-'],
+  ['-', '*', '+', ' '],
+  ['*', ' ', '-', '+']
 ]).
 
 
@@ -75,15 +75,15 @@ format_square(Square1, Square2, Square3, Square4, N) :-
     write('  _______________'), nl.
 
 format_color('*') :- 
-    print_in_color(cyan, ' '), !. 
+    print_in_color(cyan, '*'), !. 
 format_color('+') :- 
-    print_in_color(b_magenta, '#'), !.
+    print_in_color(b_magenta, '+'), !.
 
 format_color('-') :-
     print_in_color(black, '-'), !.
 
-format_color(_) :- 
-    print_in_color(white, '?').      % Default color for any other character
+format_color(X) :- 
+    print_in_color(white, X).      % Default color for any other character
 
 %logic for spinning the squares
 
