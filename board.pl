@@ -34,9 +34,10 @@ get_square(N, Board, Square) :-
 print_board(Board) :-
     nl,
     format('   A   B   C   D  ~n', []),
-    format('  _______________ ~n', []),
+    write('  _______________  '), nl,
     print_board(Board, 1),
     nl. 
+
 print_board(_, N) :- N > 16, !. 
 print_board(Board, N) :-
     NNext is N + 4,
@@ -125,4 +126,9 @@ spin_column_aux(Pos, End, Board, NewBoard) :-
 
 
 
+<<<<<<< HEAD
 % board(Board), print_board(Board).
+=======
+% board(Board), spin_column(1, Board, NewBoard), print_board(NewBoard).
+
+>>>>>>> e0d8af6d884bade9323211fd4d47df6c18dee10b
