@@ -1,6 +1,7 @@
 :- use_module(library(lists)).
 :- use_module(library(random)).
 :- consult(redefs).
+:- consult(colors).
 
 board([
   [' ', ' ', '#', ' '],
@@ -55,9 +56,33 @@ format_square(Square1, Square2, Square3, Square4, N) :-
     Square2 = [Sq2_1, Sq2_2, Sq2_3, Sq2_4],
     Square3 = [Sq3_1, Sq3_2, Sq3_3, Sq3_4],
     Square4 = [Sq4_1, Sq4_2, Sq4_3, Sq4_4],
-    format('~w|~w ~w|~w ~w|~w ~w|~w ~w|~n', [N, Sq1_1, Sq1_2, Sq2_1, Sq2_2, Sq3_1, Sq3_2, Sq4_1, Sq4_2]),
-    format(' |~w ~w|~w ~w|~w ~w|~w ~w|~n', [Sq1_3, Sq1_4, Sq2_3, Sq2_4, Sq3_3, Sq3_4, Sq4_3, Sq4_4]),
-    format('  _______________ ~n', []).
+    
+    write(N), write('|'), format_color(Sq1_1),format_color(' '), format_color(Sq1_2),
+    write('|'), format_color(Sq2_1), format_color(' '), format_color(Sq2_2),
+    write('|'), format_color(Sq3_1), format_color(' '), format_color(Sq3_2),
+    write('|'), format_color(Sq4_1), format_color(' '), format_color(Sq4_2),
+    write('|'),
+    nl,
+
+    write(' |'), format_color(Sq1_3), format_color(' '), format_color(Sq1_4),
+    write('|'), format_color(Sq2_3), format_color(' '), format_color(Sq2_4),
+    write('|'), format_color(Sq3_3), format_color(' '), format_color(Sq3_4),
+    write('|'), format_color(Sq4_3), format_color(' '), format_color(Sq4_4),
+    write('|'),
+    nl,
+
+    write('  _______________'), nl.
+
+format_color('*') :- 
+    print_in_color(cyan, ' '), !. 
+format_color('+') :- 
+    print_in_color(b_magenta, '#'), !.
+
+format_color('-') :-
+    print_in_color(black, '-'), !.
+
+format_color(_) :- 
+    print_in_color(white, '?').      % Default color for any other character
 
 %logic for spinning the squares
 
@@ -100,4 +125,4 @@ spin_column_aux(Pos, End, Board, NewBoard) :-
 
 
 
-% board(Board), spin_column(1, Board, NewBoard), print_board(NewBoard).
+% board(Board), print_board(Board).
