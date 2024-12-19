@@ -5,8 +5,8 @@ CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE
 play()
 % must be in the game.pl file and must give access to the game menu, which allows configuring the game type (H/H, H/PC, PC/H, or PC/PC), difficulty level(s) to be used by the artificial player(s), among other possible parameters, and start the game cycle.
 initial_state(GameConfig,GameState).
-/*initial_state(+GameConfig,-GameState).
-%This predicatereceives a desired game configuration
+/*initial_state(+GameConfig, -GameState).
+%This predicate receives a desired game configuration
 %and returns the corresponding initial game state. Game 
 %configuration includes the type of each player and 
 %other parameters such as board size, use of optional 
