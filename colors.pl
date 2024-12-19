@@ -1,5 +1,5 @@
 print_in_color(Color, Text) :-  color_code(Color, Code),
-                                format('\e[~wm~w\e[0m', [Code, Text]).
+                                format('~c[~wm~w~c[0m', [27, 'Code', Text, 27]).
 
 color_code(blue, '34').    % Blue
 color_code(red, '31').     % Red
