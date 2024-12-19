@@ -126,4 +126,5 @@ spin_column_aux(Pos, End, Board, NewBoard) :-
 
 
 
-% board(Board), print_board(Board).
+% board(Board), spin_column(1, Board, NewBoard), print_board(NewBoard).
+
