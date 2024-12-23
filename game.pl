@@ -32,27 +32,37 @@ move(Board, X, Y, Player, NewBoard) :-
 /*move(+GameState,+Move,-NewGameState).This predicate is responsible for move validation and execution, receiving 
 the current game state and the move to be executed, and (if the move is valid) 
 returns the new game state after the move is executed.*/
-    valid_moves_piece(X,Y,Player, Board),
 
-valid_moves_piece(X, Y, Player, Board, Moves) :-
-    (X = 1, Y >= 5, Y =< 16 -> PossibleMoves = [(2, Y+1), (2, Y), (3, Y+4), (3, Y)];
-     X = 2, Y >= 5, Y =< 15 -> PossibleMoves = [(1, Y-1), (1, Y), (4, Y+4), (4, Y)];
-     X = 3, Y >= 2, Y =< 12 -> PossibleMoves = [(1, Y), (4, Y), (4, Y+1), (1, Y-4)];
-     X = 4, Y >= 1, Y =< 12 -> PossibleMoves = [(2, Y-4), (3, Y), (2, Y), (3, Y-1)];
-     PossibleMoves = []),
-     include(valid_move(Player, Board), PossibleMoves, Moves).
+
+valid_moves_piece(1, Y, Player, Board, Moves) :-
+    PossibleMoves = [(2, Y+1), (2, Y), (3, Y+4), (3, Y)],
+    include(valid_move(Player, Board), PossibleMoves, Moves).
+
+valid_moves_piece(2, Y, Player, Board, Moves) :-
+    PossibleMoves = [(1, Y-1), (1, Y), (4, Y+4), (4, Y)],
+    include(valid_move(Player, Board), PossibleMoves, Moves).
+
+valid_moves_piece(3, Y, Player, Board, Moves) :-
+    PossibleMoves = [(1, Y), (4, Y), (4, Y+1), (1, Y-4)],
+    include(valid_move(Player, Board), PossibleMoves, Moves).
+
+valid_moves_piece(4, Y, Player, Board, Moves) :-
+    PossibleMoves = [(2, Y-4), (3, Y), (2, Y), (3, Y-1)],
+    include(valid_move(Player, Board), PossibleMoves, Moves).
 
 % Check if a move is valid based on the player and the character in the position
 valid_move(Player, Board, (X, Y)) :-
-    nth1(Y, Board, Row),
+    length(Board, Length),
+    Y > 0, Y =< Length,
+    RealY is Length - Y + 1,
+    nth1(RealY, Board, Row),
     nth1(X, Row, Char),
-    can_move_to(Player, Char).
+    can_move_to(Player, Char), !.
 
 % Define the rules for moving to a place with a specific character
 can_move_to(blue, '+') :- !.
-can_move_to(blue, '-') :- !.
+can_move_to(_, '-') :- !.
 can_move_to(pink, '*') :- !.
-can_move_to(pink, '-') :- !.
 
 valid_moves(GameState, ListOfMoves).
 
