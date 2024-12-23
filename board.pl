@@ -22,6 +22,7 @@ board([
   ['*', ' ', '-', '+']
 ]).
 
+
 %helpers
 shuffle_board(Board, ShuffledBoard) :-
     random_permutation(Board, ShuffledBoard).
@@ -79,13 +80,13 @@ print_board(Board, N) :-
 %formatting options
 
 format_square(Square1, Square2, Square3, Square4, N) :-
+
     Square1 = [Sq1_1, Sq1_2, Sq1_3, Sq1_4],
     Square2 = [Sq2_1, Sq2_2, Sq2_3, Sq2_4],
     Square3 = [Sq3_1, Sq3_2, Sq3_3, Sq3_4],
     Square4 = [Sq4_1, Sq4_2, Sq4_3, Sq4_4],
     
-    write(N), 
-    write('|'), format_color(Sq1_1),format_color(' '), format_color(Sq1_2),
+    write(N), write('|'), format_color(Sq1_1),format_color(' '), format_color(Sq1_2),
     write('|'), format_color(Sq2_1), format_color(' '), format_color(Sq2_2),
     write('|'), format_color(Sq3_1), format_color(' '), format_color(Sq3_2),
     write('|'), format_color(Sq4_1), format_color(' '), format_color(Sq4_2),
@@ -98,26 +99,13 @@ format_square(Square1, Square2, Square3, Square4, N) :-
     write('|'), format_color(Sq4_3), format_color(' '), format_color(Sq4_4),
     write('|'),
     nl,
-    write('  _______________'), nl.
 
-repeat_format_color(0, _) :- !.
-repeat_format_color(N, Char) :-
-    N > 0,
-    format_color(Char),
-    N1 is N - 1,
-    repeat_format_color(N1, Char).
+    write('  _______________'), nl.
 
 format_color('*') :- 
     print_in_color(cyan, '*'), !. 
-    
 format_color('+') :- 
     print_in_color(b_magenta, '+'), !.
-
-format_color('o') :- 
-    print_in_color(cyan, '_'), !.
-
-format_color('_') :- 
-    print_in_color(b_magenta, '_'), !.
 
 format_color('-') :-
     print_in_color(black, '-'), !.
@@ -162,6 +150,7 @@ spin_row_aux(Pos, End, Board, NewBoard) :-
     Pos1 is Pos + 1, 
     spin_row_aux(Pos1, End, TempBoard, NewBoard). 
 
+
 spin_column(Col, Board, NewBoard) :-
     Start is Col, 
     End is 16, 
@@ -174,13 +163,6 @@ spin_column_aux(Pos, End, Board, NewBoard) :-
     Pos1 is Pos + 4,
     spin_column_aux(Pos1, End, TempBoard, NewBoard).
 
-% board(Board), print_board(Board).
-% shuffle_board(Board, ShuffledBoard), spin_column(1, ShuffledBoard, NewBoard)
-column_index('a', 1).
-column_index('b', 2).
-column_index('c', 3).
-column_index('d', 4).
-column_index(A, Col) :- char_code(A, Code), Code >= 65, Code =< 68, Col is Code - 64.
 
 %keep the number of waiting figures
 pink_waiting_figures(5).

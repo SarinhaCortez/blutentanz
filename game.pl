@@ -1,3 +1,6 @@
+:- consult(board).
+:- consult(io).
+
 /*USE MEANINGFUL NAMES FOR PREDICATES AND ARGUMENTS. 
 TRY TO WRITE CODE THAT ‘LOOKS DECLARATIVE’ AND AVOID USING ‘IMPERATIVE-LOOKING’ 
 CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE 
@@ -17,17 +20,25 @@ initial_state(GameConfig,GameState).
 %identifies the current player (the one playing next), and possibly captured pieces 
 %and/or pieces yet to be played, or any other information that may be required, 
 %depending on the game.*/
-display_game(GameState).
+
+
+display_game(GameState) :-
 /*display_game(+GameState). This predicate receives the current 
 game state (including the player who will make the next move) and prints the game 
 state to the terminal. Appealing and intuitive visualizations will be valued. 
 Flexible game state representations and visualization predicates will also be 
 valued, for instance those that work with any board size. FOR UNIFORMIZATION 
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
-move(GameState, Move, NewGameState).
+    [Board, _, _, _] = Gamestate,
+    print_board(Board).
+
+
+move(Board, X, Y, Player, NewBoard) :-
 /*move(+GameState,+Move,-NewGameState).This predicate is responsible for move validation and execution, receiving 
 the current game state and the move to be executed, and (if the move is valid) 
 returns the new game state after the move is executed.*/
+
+
 valid_moves_piece(1, Y, Player, Board, Moves) :-
     PossibleMoves = [(2, Y+1), (2, Y), (3, Y+4), (3, Y)],
     include(valid_move(Player, Board), PossibleMoves, Moves).
@@ -62,13 +73,28 @@ valid_moves(GameState, ListOfMoves).
 
 /*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state, and returns a list of all possible 
 valid moves.*/
-game_over(GameState, Winner). 
-/*game_over(+GameState, -Winner). This predicate receives the current game state, and verifies whether the game 
-is over, in which case it also identifies the winner (or draw). Note that this 
-predicate should not print anything to the terminal.*/
+
+game_over(GameState, Winner) :-
+    [_, _, _, blue] = GameState,
+    blue_finished_figures(F),
+    F == 5,
+    Winner is blue.
+
+game_over(GameState, Winner) :-
+    [_, _, _, pink] = GameState,
+    pink_finished_figures(F),
+    F == 5,
+    Winner is pink.
+
+show_winner(GameState, Winner) :-
+    write(Winner),
+    write(" won!"),
+    nl.    
+
 value(GameState, Player, Value). 
 /*value(+GameState, +Player, -Value). This predicate receives the current game state and returns a value measuring how
  good/bad the current game state is to the given Player.*/
+
 choose_move(GameState, Level, Move). 
 /*choose_move(+GameState, +Level, -Move).This predicate receives the current game state and returns the move chosen by the
 computer player. Level 1 should return a random valid move. Level 2 should return 
