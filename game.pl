@@ -75,43 +75,36 @@ can_move_to(pink, '*') :- !.
 
 valid_moves(GameState, ListOfMoves).
 
-/*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state, and returns a list of all possible 
-valid moves.*/
-
-% C
+/*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state,
+and returns a list of all possible valid moves.*/
 
 play :-
     blutentanz,
-    choose_mode(Mod),
-    choose_start_player(Player),
-    choose_difficulty(Mod, Dif),
-    GameConfig = [Mod, Dif, Player].
+    choose_mode(Mod), !,
+    choose_start_player(Player), !,
+    choose_difficulty(Mod, Dif), !,
+    GameConfig = [Mod, Dif, Player], !,
+    initial_state(GameConfig, GameState),
+    display_game(GameState), nl.
 
 initial_state(GameConfig, GameState) :-
     board(Board),
     shuffle_board(Board, ShuffledBoard),
-    [Mod, Dif, Player] = GameConfig.
-    GameState = [SdBoard, Mode, Dif, Player, 0, 0, 5, 5].
+    [Mode, Dif, Player] = GameConfig,
+    GameState = [ShuffledBoard, Mode, Dif, Player, 0, 0, 5, 5].
 
 % game over - blue won
 game_over(GameState, Winner) :-
-    [_, _, _, blue,_ , _ , _ ,_]  = GameState,
+    [_, _, _, blue, CSb , _ , _ ,_]  = GameState,
     blue_finished_figures(F),
-    F == 5,
-    Winner is blue.
+    CSb == 5,
+    Winner = blue.
 
 % game over - pink won
 game_over(GameState, Winner) :-
-    [_, _, _, pink, _ , _ , _ ,_] = GameState,
-    pink_finished_figures(F),
-    F == 5,
-    Winner is pink.
-
-game_over(GameState, Winner) :-
-    [_, _, _, pink, _ , _ , _ ,_] = GameState,
-    pink_finished_figures(F),
-    F == 5,
-    Winner is pink.
+    [_, _, _, pink, _ , CSp , _ ,_] = GameState,
+    CSp == 5,
+    Winner = pink.
 
 % game over - display winner
 show_winner(GameState, Winner) :-
@@ -164,48 +157,54 @@ clear_data :-
 display_game(GameState) :- [Board, _, _, _] = Gamestate,
     print_board(Board).
 
-restore_symbol(Board, Old_X, Old_Y, NewBoard) :-
-  
-    find_empty_spot(Board, Empty_X, Empty_Y),
-    
-    % Calculate the direction based on the old position relative to the empty spot
-    (Old_X =:= Empty_X, Old_Y =:= Empty_Y + 1 -> Direction = '+' ;  % Above
-    Old_X =:= Empty_X, Old_Y =:= Empty_Y - 1 -> Direction = '-' ; % Below
-    Old_Y =:= Empty_Y, Old_X =:= Empty_X + 1 -> Direction = '*' ; % Right
-    Old_Y =:= Empty_Y, Old_X =:= Empty_X - 1 -> Direction = ' '), % Left
-    
-    % Now restore the old symbol based on the calculated direction
-    restore_board_symbol(Board, Old_X, Old_Y, Direction, NewBoard).
+% Helper predicate: find_empty_spot_in_row/3
+% find_empty_spot_in_row(+Row, -EmptyPos)
+% Finds the position of the empty spot (the " ") in the given row.
+find_empty_spot_in_row(Row, EmptyPos) :-
+    nth1(EmptyPos, Row, ' ').
 
-% Helper predicate: find_empty_spot/3
-% find_empty_spot(+Board, -Empty_X, -Empty_Y)
-% Finds the coordinates (Empty_X, Empty_Y) of the empty spot " " on the board.
-find_empty_spot(Board, Empty_X, Empty_Y) :-
-    nth1(RowIndex, Board, Row),
-    nth1(ColIndex, Row, ' '),
-    Empty_X = ColIndex,
-    Empty_Y = RowIndex.
+% Helper predicate: restore_symbol_based_on_empty/4
+% restore_symbol_based_on_empty(+Row, +OldPos, -NewRow)
+% Restores the symbol at the old position based on its relative position to the empty spot
+restore_symbol_based_on_empty(Row, OldPos, NewRow) :-
+    find_empty_spot_in_row(Row, EmptyPos),   % Find the position of " "
+    % Calculate the relative position of the old pawn to the empty spot
+    % and restore the corresponding symbol
+    (EmptyPos =:= 1 ->  % If empty spot is at position 1
+        (OldPos = 2 -> NewSymbol = '+' ; OldPos = 3 -> NewSymbol = '-' ; NewSymbol = '*') ;
+     EmptyPos =:= 2 -> % If empty spot is at position 2
+        (OldPos = 3 -> NewSymbol = '+' ; OldPos = 4 -> NewSymbol = '-' ; NewSymbol = '*') ;
+     EmptyPos =:= 3 -> % If empty spot is at position 3
+        (OldPos = 4 -> NewSymbol = '+' ; OldPos = 1 -> NewSymbol = '-' ; NewSymbol = '*') ;
+     EmptyPos =:= 4 -> % If empty spot is at position 4
+        (OldPos = 1 -> NewSymbol = '+' ; OldPos = 2 -> NewSymbol = '-' ; NewSymbol = '*')),
 
-% Helper predicate: replace_in_board_with_symbol/4
-% replace_in_board_with_symbol(+Board, +X, +Y, +Symbol, -NewBoard)
-% Replaces the symbol at coordinates (X, Y) on the board with a new symbol.
-restore_board_symbol(Board, X, Y, Symbol, NewBoard) :-
-    nth1(Y, Board, Row),
-    replace_in_row_with_symbol(Row, X, Symbol, NewRow),
-    replace_in_board(Board, Y, NewRow, NewBoard).
+    % Replace the old position with the restored symbol
+    replace_in_row_with_symbol(Row, OldPos, NewSymbol, NewRow).
 
 % Helper predicate: replace_in_row_with_symbol/4
-% replace_in_row_with_symbol(+Row, +X, +Symbol, -NewRow)
-% Replaces the value at a specific index in a row.
-replace_in_row_with_symbol(Row, X, Symbol, NewRow) :-
-    nth1(X, Row, _, TempRow), % Remove the old value
-    nth1(X, TempRow, Symbol, NewRow).
+% replace_in_row_with_symbol(+Row, +Pos, +Symbol, -NewRow)
+% Replaces the symbol at position `Pos` with `Symbol` in the given row.
+replace_in_row_with_symbol(Row, Pos, Symbol, NewRow) :-
+    nth1(Pos, Row, _, TempRow),    % Remove the old symbol
+    nth1(Pos, TempRow, Symbol, NewRow).
+
+% Helper predicate: move_pawn/7
+% move_pawn(+Old_X, +Old_Y, +New_X, +New_Y, +Board, -NewBoard)
+% Move the pawn symbol to the new position on the board.
+move_pawn(Old_X, Old_Y, New_X, New_Y, Board, NewBoard) :-
+    nth1(Old_Y, Board, OldRow),  % Get the old row
+    replace_in_row_with_symbol(OldRow, Old_X, ' ', NewRow), % Replace old pawn with empty spot
+    replace_in_board(Board, Old_Y, NewRow, TempBoard), % Replace row in the board
+    nth1(New_Y, TempBoard, NewRow),   % Get the new row
+    replace_in_row_with_symbol(NewRow, New_X, '1', NewNewRow), % Place pawn at new location
+    replace_in_board(TempBoard, New_Y, NewNewRow, NewBoard). % Update board
 
 % Helper predicate: replace_in_board/4
 % replace_in_board(+Board, +RowIndex, +NewRow, -NewBoard)
-% Replaces a row in the board at a specific index.
+% Replaces a row at a specific index in the board.
 replace_in_board(Board, RowIndex, NewRow, NewBoard) :-
-    nth1(RowIndex, Board, _, TempBoard), % Remove the old row
+    nth1(RowIndex, Board, _, TempBoard),
     nth1(RowIndex, TempBoard, NewRow, NewBoard).
 
 % Main predicate: move/7
@@ -214,26 +213,23 @@ move(Pawn_Symbol, Old_X, Old_Y, New_X, New_Y, GameState, NewGameState) :-
     % Extract relevant parts from GameState
     [Board, _, _, Player, ScoreBlue, ScorePink, _, _] = GameState,
 
-    % Restore the symbol at the old position
-    restore_symbol(Board, Old_X, Old_Y, TempBoard),
+    % Step 1: Restore the symbol at the old position
+    restore_symbol_based_on_empty(Board, Old_X, Old_Y, TempBoard),
 
-    % Move the pawn to the new position
-    nth1(New_Y, TempBoard, Row), % Find the row at New_Y
-    replace_in_row_with_symbol(Row, New_X, Pawn_Symbol, NewRow), % Place pawn at New_X
-    replace_in_board(TempBoard, New_Y, NewRow, NewBoard),
+    % Step 2: Move the pawn to the new position
+    move_pawn(Old_X, Old_Y, New_X, New_Y, TempBoard, NewBoard),
 
-    % Check if player is pink and pawn is in the scoring position
-    (Player = pink, New_X = 1, New_Y = 1; % Example: check the first row for pink
-    Player = blue, New_X = 4, New_Y = 4), % Example: check the last row for blue
+    % Step 3: Check for scoring position and update score
+    (Player = pink, New_X = 1, New_Y = 1 -> NewScorePink is ScorePink + 1 ; NewScorePink is ScorePink),
+    (Player = blue, New_X = 4, New_Y = 4 -> NewScoreBlue is ScoreBlue + 1 ; NewScoreBlue is ScoreBlue),
 
-    % Update the score based on the player
-    (Player = pink -> NewScorePink is ScorePink + 1, NewScoreBlue is ScoreBlue;
-     Player = blue -> NewScoreBlue is ScoreBlue + 1, NewScorePink is ScorePink),
-
-    % Set the new game state
+    % Step 4: Return the new game state
     NewGameState = [NewBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _].
 
 
+
+display_game(GameState) :- 
+    print_board(GameState).
 
 % configuration(-GameState)
 % Init GameState with Board, first Player, empty FearList and TotalMoves
