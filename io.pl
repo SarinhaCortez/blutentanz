@@ -2,14 +2,12 @@
 :- consult(redefs).
 
 choose_spin :-
-    board(Board),%tirar
-    print_board(Board),
+    [Board, _, _, _|_] = GameState,
     repeat,
     write('Choose a row (1-4) or column (A-D) to spin (don\'t forget the . after your choice): '),
     read(Input),
     process_spin_input(Input, Board, NewBoard, Success),
-    Success == 1,
-    print_board(NewBoard), !.
+    Success == 1 !.
 
 process_spin_input(Input, Board, NewBoard, Success):- 
     member(Input, [1, 2, 3, 4]), !,

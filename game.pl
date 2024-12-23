@@ -139,10 +139,11 @@ game_loop(GameState):-
     display_game(GameState),
     show_winner(GameState, Winner).
 game_loop(GameState):-
-    display_game(GameState),
     print_turn(GameState),
-    choose_move(GameState, NewX, NewY),
-    move(Pawn_Symbol, Old_X, Old_Y, NewX, NewY, GameState, NewGameState), !,
+    display_game(GameState),
+    choose_spin(GameState),
+    display_game(GameState),
+    call_choose_and_move(3, GameState), !,
     game_loop(NewGameState).
 
 clear_data :-
@@ -232,3 +233,23 @@ configurations([Board,Player,[],0]):-
     choose_player(Player),
     choose_board(Size), 
     init_state(Size, Board).*/
+
+% Example condition predicate (can be customized)
+
+
+% Main predicate calling choose_move/3 three times
+call_choose_and_move(0, _) :- !. 
+/*
+should_stop(N).
+call_choose_and_move(N, GameState) :-
+    should_stop(N), 
+    writeln('Condition met, stopping!'), !.*/
+call_choose_and_move(N, GameState) :-
+    N > 0,
+    repeat,
+    choose_moving_piece(GameState, NewGameState, Piece, X, Y),
+    choose_move(GameState, NewX, NewY),
+    format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
+    move(Pawn_Symbol, Old_X, Old_Y, NewX, NewY, GameState, NewGameState),
+    N1 is N - 1,
+    call_choose_move(N1, NewGameState).
