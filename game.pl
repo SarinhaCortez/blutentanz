@@ -28,10 +28,11 @@ valued, for instance those that work with any board size. FOR UNIFORMIZATION
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
 
 
-move(GameState, Move, NewGameState).
+move(Board, X, Y, Player, NewBoard) :-
 /*move(+GameState,+Move,-NewGameState).This predicate is responsible for move validation and execution, receiving 
 the current game state and the move to be executed, and (if the move is valid) 
 returns the new game state after the move is executed.*/
+    valid_moves_piece(X,Y,Player, Board),
 
 valid_moves_piece(X, Y, Player, Board, Moves) :-
     (X = 1, Y >= 5, Y =< 16 -> PossibleMoves = [(2, Y+1), (2, Y), (3, Y+4), (3, Y)];
