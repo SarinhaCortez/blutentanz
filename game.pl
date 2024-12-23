@@ -189,23 +189,10 @@ move(Pawn_Symbol, Old_X, Old_Y, New_X, New_Y, GameState, NewGameState) :-
     replace_in_square(NewSquare, New_X, Pawn_Symbol, FinalNewSquare),
     replace_in_board(TempBoard, New_Y, FinalNewSquare, FinalBoard),
 
-    update_score(Player, New_X, New_Y, ScoreBlue, ScorePink, NewScoreBlue, NewScorePink),
+    score_update(Player, New_X, New_Y, ScoreBlue, ScorePink, NewScoreBlue, NewScorePink, FinalBoard, FinalRestoredBoard),
 
-    % Update the score if needed
-    (   NewScorePink > ScorePink 
-    ->  nth1(New_Y, FinalBoard, NewSquare),
-        find_empty_spot(NewSquare, EmptyIndex),
-        restore_symbol(NewSquare, EmptyIndex, RestoredNewSquare),
-        replace_in_board(FinalBoard, New_Y, RestoredNewSquare, FinalRestoredBoard),
-        NewGameState = [FinalRestoredBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _]
-    ;   NewScoreBlue > ScoreBlue 
-    ->  nth1(New_Y, FinalBoard, NewSquare),
-        find_empty_spot(NewSquare, EmptyIndex),
-        restore_symbol(NewSquare, EmptyIndex, RestoredNewSquare),
-        replace_in_board(FinalBoard, New_Y, RestoredNewSquare, FinalRestoredBoard),
-        NewGameState = [FinalRestoredBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _]
-    ;   NewGameState = [FinalBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _]
-    ).
+    NewGameState = [FinalRestoredBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _].
+
 
 % Helper to replace a row in the board
 replace_in_board(Board, RowIndex, NewRow, NewBoard) :-
@@ -219,13 +206,23 @@ replace_in_square([TopLeft, TopRight, _, BottomRight], 3, Symbol, [TopLeft, TopR
 replace_in_square([TopLeft, TopRight, BottomLeft, _], 4, Symbol, [TopLeft, TopRight, BottomLeft, Symbol]).
 
 % Score update for Pink and Blue
-update_score(pink, X, Y, ScoreBlue, ScorePink, ScoreBlue, NewScorePink) :-
-    Y >= 0, Y =< 3, X = 1,  
-    NewScorePink is ScorePink + 1.
-update_score(blue, X, Y, ScoreBlue, ScorePink, NewScoreBlue, ScorePink) :-
+
+score_update(pink, _, Y, ScoreBlue, ScorePink, NewScoreBlue, NewScorePink, FinalBoard, FinalRestoredBoard) :-
+    Y >= 0, Y =< 3,  
+    NewScorePink is ScorePink + 1,
+    nth1(Y, FinalBoard, Square),
+    find_empty_spot(Square, EmptyIndex),
+    restore_symbol(Square, EmptyIndex, RestoredSquare),
+    replace_in_board(FinalBoard, Y, RestoredSquare, FinalRestoredBoard).
+    
+score_update(blue, X, Y, ScoreBlue, ScorePink, NewScoreBlue, ScorePink, FinalBoard, FinalRestoredBoard) :-
     Y >= 12, Y =< 15, X = 4,  
-    NewScoreBlue is ScoreBlue + 1.
-update_score(_, _, _, ScoreBlue, ScorePink, ScoreBlue, ScorePink). 
+    NewScoreBlue is ScoreBlue + 1,
+    nth1(Y, FinalBoard, Square),
+    find_empty_spot(Square, EmptyIndex),
+    restore_symbol(Square, EmptyIndex, RestoredSquare),
+    replace_in_board(FinalBoard, Y, RestoredSquare, FinalRestoredBoard).
+score_update(_, _, _, ScoreBlue, ScorePink, ScoreBlue, ScorePink, FinalBoard, FinalBoard). % No score change if no goal reached
 
 display_game(GameState) :- 
     print_board(GameState).
