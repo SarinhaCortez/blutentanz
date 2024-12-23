@@ -79,11 +79,18 @@ choose_start_player(StartPlayer) :-
     StartPlayer = Input.
     
 % Move check
-parse_move(GameState, Coords, Symbol) :-
-    [Board, _, _, blue, _, _, _, _] = GameState,
-    member(Symbol, ['-', '*']),
-    
+
+input_move(GameState, Symbol, Index) :-
+    [Board, _, _, Cp, _, _, _, _] = GameState,
+    repeat,
+    write('What square do you want to move your piece to? Don\'t  forget the . after your choice: '),
+    read(Square), 
+    nl,
+    repeat,
+    write('What symbol do you want to move your piece to? Don\'t forget the . after your choice: '),
+    read(Symbol),   
+    get_square_index(Board, Square, Symbol, Index).
     
 
 
-choose_move_coords(GameState, )
+

@@ -59,13 +59,14 @@ valid_moves_piece(4, Y, Player, Board, Moves) :-
     include(valid_move(Player, Board), PossibleMoves, Moves).
 
 % Check if a move is valid based on the player and the character in the position
-valid_move(Player, Board, (X, Y)) :-
-    length(Board, Length),
-    Y > 0, Y =< Length,
-    RealY is Length - Y + 1,
-    nth1(RealY, Board, Row),
-    nth1(X, Row, Char),
-    can_move_to(Player, Char), !.
+valid_move(GameState, X_Index, Y_Index) :-
+    [Board, _, _, Player | _] = GameState,  
+    length(Board, Length),                 
+    Y_Index >= 0, Y_Index < Length,        
+    nth1(Y_Index, Board, Row),             % Access the row corresponding to Y_Index
+    nth1(X_Index, Row, Char),              % Access the character at X_Index in the row
+    can_move_to(Player, Char), !.          % Check if the Player can move to this Char
+
 
 % Define the rules for moving to a place with a specific character
 can_move_to(blue, '+') :- !.
@@ -122,12 +123,29 @@ value(GameState, Player, Value).
 /*value(+GameState, +Player, -Value). This predicate receives the current game state and returns a value measuring how
  good/bad the current game state is to the given Player.*/
 
-choose_move(GameState, Level, Move). 
+
 /*choose_move(+GameState, +Level, -Move).This predicate receives the current game state and returns the move chosen by the
 computer player. Level 1 should return a random valid move. Level 2 should return 
 the best play at the time (using a greedy algorithm), considering the evaluation of
 the game state as determined by the value/3 predicate. For human players, it should
  interact with the user to read the move.*/
+
+% Human vs. Human
+choose_move(GameState, _, Move).
+    [_, 1, _, _, _, _, _, _] = GameState,
+    input_move(GameState, Symbol, Y_Index),
+    check_x_index(GameState, Symbol, Y_Index, X_Index),
+    valid_move(GameState, X_Index, Y_Index).
+
+check_x_index(GameState, Symbol, Y_Index, X_Index) :-
+    [Board, _, _, _ | _] = GameState,   
+    nth1(Y_Index, Board, Row),         
+    (nth1(X_Index, Row, Symbol) ->     
+        true                          
+    ; 
+        write('Invalid move: Symbol not found in the specified row.'), nl, 
+        fail                          
+    ).
 
 % game_loop(+GameState)
 game_loop(GameState):-
