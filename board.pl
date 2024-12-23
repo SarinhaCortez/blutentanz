@@ -48,6 +48,8 @@ print_blue_waiting_figures(N) :-
 %displaying the board
 print_board(Board) :-
     nl,
+    blue_finished_figures(Ff),
+    format('Blue already passed ~w figures.', Ff), nl, nl,
     blue_waiting_figures(F),
     print_blue_waiting_figures(F),
     write('  '), repeat_format_color(15, 'o'), nl, nl,
@@ -58,7 +60,9 @@ print_board(Board) :-
 
 print_board(_, N) :- N > 16, 
     write('  '), repeat_format_color(15, '_'), nl,  nl,
-    pink_waiting_figures(F), print_pink_waiting_figures(F),!.
+    pink_waiting_figures(F), print_pink_waiting_figures(F),
+    pink_finished_figures(Ff), nl,
+    format('Pink already passed ~w figures.', Ff), !, nl.
 
 print_board(Board, N) :-
     NNext is N + 4,
@@ -171,9 +175,13 @@ column_index('c', 3).
 column_index('d', 4).
 column_index(A, Col) :- char_code(A, Code), Code >= 65, Code =< 68, Col is Code - 64.
 
-%keep the number of waiting figues
+%keep the number of waiting figures
 pink_waiting_figures(5).
 blue_waiting_figures(5).
+
+%keep the number of finished figures
+pink_finished_figures(0).
+blue_finished_figures(0).
 
 decrease_pink_waiting_figures :-
     pink_waiting_figures(N),
@@ -209,3 +217,15 @@ get_square_index(Board, Input, Char, Index) :-
     nth1(Row, Board, BoardRow),
     nth1(Col, BoardRow, Char),!,
     nth1(Index, BoardRow, Char),!.
+
+increase_pink_finished_figures :-
+    pink_finished_figures(N),
+    N1 is N + 1,
+    retractall(pink_finished_figures(_)),
+    assert(pink_finished_figures(N1)).
+
+increase_blue_finished_figures :-
+    blue_finished_figures(N),
+    N1 is N + 1,
+    retractall(blue_finished_figures(_)),
+    assert(blue_finished_figures(N1)).
