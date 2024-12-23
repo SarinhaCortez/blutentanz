@@ -82,16 +82,25 @@ valid_moves(GameState, ListOfMoves).
 /*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state, and returns a list of all possible 
 valid moves.*/
 
+init_state(GameState) :-
+    []
+
 % game over - blue won
 game_over(GameState, Winner) :-
-    [_, _, _, blue] = GameState,
+    [_, _, _, blue,_ , _ , _ ,_]  = GameState,
     blue_finished_figures(F),
     F == 5,
     Winner is blue.
 
 % game over - pink won
 game_over(GameState, Winner) :-
-    [_, _, _, pink] = GameState,
+    [_, _, _, pink, _ , _ , _ ,_] = GameState,
+    pink_finished_figures(F),
+    F == 5,
+    Winner is pink.
+
+game_over(GameState, Winner) :-
+    [_, _, _, pink, _ , _ , _ ,_] = GameState,
     pink_finished_figures(F),
     F == 5,
     Winner is pink.
