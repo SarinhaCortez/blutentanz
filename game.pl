@@ -31,7 +31,7 @@ PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
 
 % prints current player
 print_turn(GameState) :-
-    [_, _, _, Cp] = GameState,
+    [_, _, _, Cp | _] = GameState,
     write(Cp),
     write(' ,your turn!'),
     nl.
@@ -162,11 +162,11 @@ find_empty_spot(Square, EmptyIndex) :-
 
 
 % Restore square based on empty pos
-restore_symbol(Square, EmptyIndex, RestoredSquare) :-
-    (EmptyIndex = 1 -> RestoredSquare = [" ", "+", "*", "-"];
-    EmptyIndex = 2 -> RestoredSquare = ["*", " ", "-", "+"];
-    EmptyIndex = 3 -> RestoredSquare = ["-", "*", "+", " "];
-    EmptyIndex = 4 -> RestoredSquare = ["+", "-", " ", "*"]).
+restore_symbol(Square, 1, [" ", "+", "*", "-"]).
+restore_symbol(Square, 2, ["*", " ", "-", "+"]).
+restore_symbol(Square, 3, ["-", "*", "+", " "]).
+restore_symbol(Square, 4, ["+", "-", " ", "*"]).
+
 
 % Move the pawn
 move(Pawn_Symbol, Old_X, Old_Y, New_X, New_Y, GameState, NewGameState) :-
