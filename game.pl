@@ -32,8 +32,8 @@ move(GameState, Move, NewGameState).
 /*move(+GameState,+Move,-NewGameState).This predicate is responsible for move validation and execution, receiving 
 the current game state and the move to be executed, and (if the move is valid) 
 returns the new game state after the move is executed.*/
+valid_moves(GameState, ListOfMoves) :-
 
-valid_moves(GameState, ListOfMoves). 
 /*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state, and returns a list of all possible 
 valid moves.*/
 
@@ -52,3 +52,28 @@ computer player. Level 1 should return a random valid move. Level 2 should retur
 the best play at the time (using a greedy algorithm), considering the evaluation of
 the game state as determined by the value/3 predicate. For human players, it should
  interact with the user to read the move.*/
+
+% game_cycle(+GameState)
+game(GameState):-
+    game_over(GameState, Winner), !,
+    display_game(GameState),
+    show_winner(GameState, Winner).
+game(GameState):-
+    display_game(GameState),
+    print_turn(GameState),
+    choose_move(GameState, Move),
+    move(GameState, Move, NewGameState), !,
+    game(NewGameState).
+
+clear_data :-
+    retractall(board(_)).
+
+% configuration(-GameState)
+% Init GameState with Board, first Player, empty FearList and TotalMoves
+configurations([Board,Player,[],0]):-
+    barca,
+    set_mode,
+    init_random_state,
+    choose_player(Player),
+    choose_board(Size), 
+    init_state(Size, Board).
