@@ -33,7 +33,8 @@ print_pink_waiting_figures(0) :- nl, !.
 print_pink_waiting_figures(N) :-
     write('  '),
     N > 0,
-    format_color('8'),
+    FN is N - 1,
+    format_color(FN),
     N1 is N - 1,
     print_pink_waiting_figures(N1).
 
@@ -41,7 +42,8 @@ print_blue_waiting_figures(0) :- nl, !.
 print_blue_waiting_figures(N) :-
     write('  '),
     N > 0,
-    format_color('9'),
+    FN is N + 4,
+    format_color(FN),
     N1 is N - 1,
     print_blue_waiting_figures(N1).
 
@@ -121,10 +123,15 @@ format_color('-') :-
     print_in_color(black, '-'), !.
     
 %print players
-format_color('8') :- 
-    print_in_color(b_magenta, '8'), !. 
-format_color('9') :- 
-    print_in_color(cyan, '8'), !. 
+format_color(X) :- 
+    between(0, 4, X), !,
+    X1 is X+1,
+    print_in_color(b_magenta, X1). 
+
+format_color(X) :- 
+    between(5, 9, X), !,
+    X1 is X-4,
+    print_in_color(cyan, X1).
 
 format_color(X) :- 
     print_in_color(white, X).      % Default color for any other character
