@@ -5,9 +5,9 @@
 TRY TO WRITE CODE THAT ‘LOOKS DECLARATIVE’ AND AVOID USING ‘IMPERATIVE-LOOKING’ 
 CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE 
 (E.G., USING TAIL RECURSION WHEN POSSIBLE).*/
-play()
-% must be in the game.pl file and must give access to the game menu, which allows configuring the game type (H/H, H/PC, PC/H, or PC/PC), difficulty level(s) to be used by the artificial player(s), among other possible parameters, and start the game cycle.
-initial_state(GameConfig,GameState).
+
+% play/0 must be in the game.pl file and must give access to the game menu, which allows configuring the game type (H/H, H/PC, PC/H, or PC/PC), difficulty level(s) to be used by the artificial player(s), among other possible parameters, and start the game cycle.
+
 /*initial_state(+GameConfig, -GameState).
 %This predicate receives a desired game configuration
 %and returns the corresponding initial game state. Game 
@@ -22,18 +22,16 @@ initial_state(GameConfig,GameState).
 %depending on the game.*/
 
 
-display_game(GameState) :-
+
 /*display_game(+GameState). This predicate receives the current 
 game state (including the player who will make the next move) and prints the game 
 state to the terminal. Appealing and intuitive visualizations will be valued. 
 Flexible game state representations and visualization predicates will also be 
 valued, for instance those that work with any board size. FOR UNIFORMIZATION 
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
-    [Board, _, _, _] = Gamestate,
-    print_board(Board).
+    
 
 
-move(Board, X, Y, Player, NewBoard) :-
 /*move(+GameState,+Move,-NewGameState).This predicate is responsible for move validation and execution, receiving 
 the current game state and the move to be executed, and (if the move is valid) 
 returns the new game state after the move is executed.*/
@@ -74,8 +72,20 @@ valid_moves(GameState, ListOfMoves).
 /*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state, and returns a list of all possible 
 valid moves.*/
 
-init_state(GameState) :-
-    []
+% C
+
+play :-
+    blutentanz,
+    choose_mode(Mod),
+    choose_start_player(Player),
+    choose_difficulty(Mod, Dif),
+    GameConfig = [Mod, Dif, Player].
+
+initial_state(GameConfig, GameState) :-
+    board(Board),
+    shuffle_board(Board, ShuffledBoard),
+    [Mod, Dif, Player] = GameConfig.
+    GameState = [SdBoard, Mode, Dif, Player, 0, 0, 5, 5].
 
 game_over(GameState, Winner) :-
     [_, _, _, blue,_ , _ , _ ,_]  = GameState,
@@ -125,13 +135,16 @@ game_loop(GameState):-
 
 clear_data :-
     retractall(board(_)).
-
+display_game(GameState) :- [Board, _, _, _] = Gamestate,
+    print_board(Board).
+move(Board, X, Y, Player, NewBoard).
 % configuration(-GameState)
 % Init GameState with Board, first Player, empty FearList and TotalMoves
+/*
 configurations([Board,Player,[],0]):-
     barca,
     set_mode,
     init_random_state,
     choose_player(Player),
     choose_board(Size), 
-    init_state(Size, Board).
+    init_state(Size, Board).*/
