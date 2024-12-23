@@ -131,7 +131,7 @@ the game state as determined by the value/3 predicate. For human players, it sho
  interact with the user to read the move.*/
 
 % Human vs. Human
-choose_move(GameState, _, Move).
+choose_move(GameState, _, X_Index, Y_Index).
     [_, 1, _, _, _, _, _, _] = GameState,
     input_move(GameState, Symbol, Y_Index),
     check_x_index(GameState, Symbol, Y_Index, X_Index),
@@ -155,15 +155,86 @@ game_loop(GameState):-
 game_loop(GameState):-
     display_game(GameState),
     print_turn(GameState),
-    choose_move(GameState, Move),
-    move(GameState, Move, NewGameState), !,
+    choose_move(GameState, NewX, NewY),
+    move(Pawn_Symbol, Old_X, Old_Y, NewX, NewY, GameState, NewGameState), !,
     game_loop(NewGameState).
 
 clear_data :-
     retractall(board(_)).
 display_game(GameState) :- [Board, _, _, _] = Gamestate,
     print_board(Board).
-move(Board, X, Y, Player, NewBoard).
+
+restore_symbol(Board, Old_X, Old_Y, NewBoard) :-
+  
+    find_empty_spot(Board, Empty_X, Empty_Y),
+    
+    % Calculate the direction based on the old position relative to the empty spot
+    (Old_X =:= Empty_X, Old_Y =:= Empty_Y + 1 -> Direction = '+' ;  % Above
+    Old_X =:= Empty_X, Old_Y =:= Empty_Y - 1 -> Direction = '-' ; % Below
+    Old_Y =:= Empty_Y, Old_X =:= Empty_X + 1 -> Direction = '*' ; % Right
+    Old_Y =:= Empty_Y, Old_X =:= Empty_X - 1 -> Direction = ' '), % Left
+    
+    % Now restore the old symbol based on the calculated direction
+    restore_board_symbol(Board, Old_X, Old_Y, Direction, NewBoard).
+
+% Helper predicate: find_empty_spot/3
+% find_empty_spot(+Board, -Empty_X, -Empty_Y)
+% Finds the coordinates (Empty_X, Empty_Y) of the empty spot " " on the board.
+find_empty_spot(Board, Empty_X, Empty_Y) :-
+    nth1(RowIndex, Board, Row),
+    nth1(ColIndex, Row, ' '),
+    Empty_X = ColIndex,
+    Empty_Y = RowIndex.
+
+% Helper predicate: replace_in_board_with_symbol/4
+% replace_in_board_with_symbol(+Board, +X, +Y, +Symbol, -NewBoard)
+% Replaces the symbol at coordinates (X, Y) on the board with a new symbol.
+restore_board_symbol(Board, X, Y, Symbol, NewBoard) :-
+    nth1(Y, Board, Row),
+    replace_in_row_with_symbol(Row, X, Symbol, NewRow),
+    replace_in_board(Board, Y, NewRow, NewBoard).
+
+% Helper predicate: replace_in_row_with_symbol/4
+% replace_in_row_with_symbol(+Row, +X, +Symbol, -NewRow)
+% Replaces the value at a specific index in a row.
+replace_in_row_with_symbol(Row, X, Symbol, NewRow) :-
+    nth1(X, Row, _, TempRow), % Remove the old value
+    nth1(X, TempRow, Symbol, NewRow).
+
+% Helper predicate: replace_in_board/4
+% replace_in_board(+Board, +RowIndex, +NewRow, -NewBoard)
+% Replaces a row in the board at a specific index.
+replace_in_board(Board, RowIndex, NewRow, NewBoard) :-
+    nth1(RowIndex, Board, _, TempBoard), % Remove the old row
+    nth1(RowIndex, TempBoard, NewRow, NewBoard).
+
+% Main predicate: move/7
+% move(+Pawn_Symbol, +Old_X, +Old_Y, +New_X, +New_Y, +GameState, -NewGameState)
+move(Pawn_Symbol, Old_X, Old_Y, New_X, New_Y, GameState, NewGameState) :-
+    % Extract relevant parts from GameState
+    [Board, _, _, Player, ScoreBlue, ScorePink, _, _] = GameState,
+
+    % Restore the symbol at the old position
+    restore_symbol(Board, Old_X, Old_Y, TempBoard),
+
+    % Move the pawn to the new position
+    nth1(New_Y, TempBoard, Row), % Find the row at New_Y
+    replace_in_row_with_symbol(Row, New_X, Pawn_Symbol, NewRow), % Place pawn at New_X
+    replace_in_board(TempBoard, New_Y, NewRow, NewBoard),
+
+    % Check if player is pink and pawn is in the scoring position
+    (Player = pink, New_X = 1, New_Y = 1; % Example: check the first row for pink
+    Player = blue, New_X = 4, New_Y = 4), % Example: check the last row for blue
+
+    % Update the score based on the player
+    (Player = pink -> NewScorePink is ScorePink + 1, NewScoreBlue is ScoreBlue;
+     Player = blue -> NewScoreBlue is ScoreBlue + 1, NewScorePink is ScorePink),
+
+    % Set the new game state
+    NewGameState = [NewBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _].
+
+
+
 % configuration(-GameState)
 % Init GameState with Board, first Player, empty FearList and TotalMoves
 /*
