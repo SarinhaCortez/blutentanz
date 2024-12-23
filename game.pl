@@ -38,27 +38,26 @@ returns the new game state after the move is executed.*/
 
 
 valid_moves_piece(1, Y, Player, Board, Moves) :-
-    PossibleMoves = [(2, Y+1), (2, Y), (3, Y+4), (3, Y)],
+    PossibleMoves = [(2, Y-1), (2, Y), (3, Y-4), (3, Y)],
     include(valid_move(Player, Board), PossibleMoves, Moves).
 
 valid_moves_piece(2, Y, Player, Board, Moves) :-
-    PossibleMoves = [(1, Y-1), (1, Y), (4, Y+4), (4, Y)],
+    PossibleMoves = [(1, Y+1), (1, Y), (4, Y-4), (4, Y)],
     include(valid_move(Player, Board), PossibleMoves, Moves).
 
 valid_moves_piece(3, Y, Player, Board, Moves) :-
-    PossibleMoves = [(1, Y), (4, Y), (4, Y+1), (1, Y-4)],
+    PossibleMoves = [(1, Y), (4, Y), (4, Y-1), (1, Y+4)],
     include(valid_move(Player, Board), PossibleMoves, Moves).
 
 valid_moves_piece(4, Y, Player, Board, Moves) :-
-    PossibleMoves = [(2, Y-4), (3, Y), (2, Y), (3, Y-1)],
+    PossibleMoves = [(2, Y+4), (3, Y), (2, Y), (3, Y+1)],
     include(valid_move(Player, Board), PossibleMoves, Moves).
 
 % Check if a move is valid based on the player and the character in the position
 valid_move(Player, Board, (X, Y)) :-
     length(Board, Length),
     Y > 0, Y =< Length,
-    RealY is Length - Y + 1,
-    nth1(RealY, Board, Row),
+    nth1(Y, Board, Row),
     nth1(X, Row, Char),
     can_move_to(Player, Char), !.
 
