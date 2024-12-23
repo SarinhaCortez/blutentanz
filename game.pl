@@ -131,12 +131,7 @@ choose_move(GameState, _, X_Index, Y_Index).
 check_x_index(GameState, Symbol, Y_Index, X_Index) :-
     [Board, _, _, _ | _] = GameState,   
     nth1(Y_Index, Board, Row),         
-    (nth1(X_Index, Row, Symbol) ->     
-        true                          
-    ; 
-        write('Invalid move: Symbol not found in the specified row.'), nl, 
-        fail                          
-    ).
+    nth1(X_Index, Row, Symbol).
 
 % game_loop(+GameState)
 game_loop(GameState):-
@@ -214,7 +209,7 @@ score_update(pink, _, Y, ScoreBlue, ScorePink, NewScoreBlue, NewScorePink, Final
     find_empty_spot(Square, EmptyIndex),
     restore_symbol(Square, EmptyIndex, RestoredSquare),
     replace_in_board(FinalBoard, Y, RestoredSquare, FinalRestoredBoard).
-    
+
 score_update(blue, X, Y, ScoreBlue, ScorePink, NewScoreBlue, ScorePink, FinalBoard, FinalRestoredBoard) :-
     Y >= 12, Y =< 15, X = 4,  
     NewScoreBlue is ScoreBlue + 1,
