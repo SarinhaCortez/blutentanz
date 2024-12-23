@@ -24,25 +24,38 @@ process_spin_input(_Input, _Board, _NewBoard, Success) :-
     write('Invalid input. Please choose a row (1-4) or column (A-D)'),
     Success = 0.
 
-choose_moving_piece(GameState) :-
+choose_moving_piece(GameState, NewGameState, Piece) :-
     [_, _, _, Player, _, _, WB, WP] = GameState,
-    choose_moving_piece(Player, WB, WP).
-choose_moving_piece(pink, _WB, WP) :-
+    NeWB = WB, NeWP = WP,
+    choose_moving_piece(Player, WB, WP, NeWB, NeWP, Piece),
+    replace_waiting_pieces(GameState, NeWB, NeWP, NewGameState).
+
+choose_moving_piece(pink, _, WP, _, NeWP, Piece) :-
     possible_pieces_pink(Pieces, WP),
     repeat,
     write('What piece do you want to move?(Don\'t forget the . after your choice)\n Choose from: '),
     print(Pieces),
     read(Input),
     validate_piece_input(Input, Pieces, Success),
-    Success == 1, !.
-choose_moving_piece(blue, WB, _WP) :-
+    Success == 1, 
+    updateWaiting(Input, WP, NeWP), !,
+    Piece=Input.
+choose_moving_piece(blue, WB, _, NeWB, _, Piece) :-
     possible_pieces_blue(Pieces, WB),
     repeat,
     write('What piece do you want to move?(Don\'t forget the . after your choice)\n Choose from: '),
     print(Pieces),
     read(Input),
     validate_piece_input(Input, Pieces, Success),
-    Success == 1, !.
+    Success == 1,
+    updateWaiting(Input, WB, NeWB), !, 
+    Piece = Input.
+
+updateWaiting(Input, Input, NeW) :- NeW is Input - 1, !.
+updateWaiting(_, _, _).
+
+replace_waiting_pieces([Board, Mode, Dif, Player, CSb, CSp, _, _], NeWB, NeWP, 
+                       [Board, Mode, Dif, Player, CSb, CSp, NeWB, NeWP]).
 
 possible_pieces_blue(ListOfPieces, WB) :-
     findall(X, (between(WB, 5, X)), ListOfPieces).

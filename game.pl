@@ -79,7 +79,7 @@ play :-
     choose_difficulty(Mod, Dif), !,
     GameConfig = [Mod, Dif, Player], !,
     initial_state(GameConfig, GameState),
-    display_game(GameState), nl.
+    display_game(GameState).
 
 initial_state(GameConfig, GameState) :-
     board(Board),
