@@ -57,3 +57,6 @@ possible_pieces_pink(ListOfPieces) :-
     pink_waiting_figures(N),
     findall(X, (between(N, 5, X)), ListOfPieces).
 
+parse_move(GameState, Coords, Symbol) :-
+
+choose_move_coords(GameState, )

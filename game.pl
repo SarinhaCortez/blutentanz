@@ -21,16 +21,24 @@ initial_state(GameConfig,GameState).
 %and/or pieces yet to be played, or any other information that may be required, 
 %depending on the game.*/
 
-
-display_game(GameState) :-
 /*display_game(+GameState). This predicate receives the current 
 game state (including the player who will make the next move) and prints the game 
 state to the terminal. Appealing and intuitive visualizations will be valued. 
 Flexible game state representations and visualization predicates will also be 
 valued, for instance those that work with any board size. FOR UNIFORMIZATION 
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
+
+% prints current board state
+display_game(GameState) :-
     [Board, _, _, _] = Gamestate,
     print_board(Board).
+
+% prints current player
+print_turn(GameState) :-
+    [_, _, _, Cp] = GameState,
+    write(Cp),
+    write(' ,your turn!'),
+    nl.
 
 
 move(Board, X, Y, Player, NewBoard) :-
@@ -74,18 +82,21 @@ valid_moves(GameState, ListOfMoves).
 /*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state, and returns a list of all possible 
 valid moves.*/
 
+% game over - blue won
 game_over(GameState, Winner) :-
     [_, _, _, blue] = GameState,
     blue_finished_figures(F),
     F == 5,
     Winner is blue.
 
+% game over - pink won
 game_over(GameState, Winner) :-
     [_, _, _, pink] = GameState,
     pink_finished_figures(F),
     F == 5,
     Winner is pink.
 
+% game over - display winner
 show_winner(GameState, Winner) :-
     write(Winner),
     write(" won!"),
