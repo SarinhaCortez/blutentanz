@@ -63,9 +63,9 @@ valid_move(GameState, X_Index, Y_Index) :-
     [Board, _, _, Player | _] = GameState,  
     length(Board, Length),                 
     Y_Index >= 0, Y_Index < Length,        
-    nth1(Y_Index, Board, Row),             % Access the row corresponding to Y_Index
-    nth1(X_Index, Row, Char),              % Access the character at X_Index in the row
-    can_move_to(Player, Char), !.          % Check if the Player can move to this Char
+    nth1(Y_Index, Board, Row),            
+    nth1(X_Index, Row, Char),              
+    can_move_to(Player, Char), !.          
 
 
 % Define the rules for moving to a place with a specific character
@@ -157,76 +157,77 @@ clear_data :-
 display_game(GameState) :- [Board, _, _, _] = Gamestate,
     print_board(Board).
 
-% Helper predicate: find_empty_spot_in_row/3
-% find_empty_spot_in_row(+Row, -EmptyPos)
-% Finds the position of the empty spot (the " ") in the given row.
-find_empty_spot_in_row(Row, EmptyPos) :-
-    nth1(EmptyPos, Row, ' ').
 
-% Helper predicate: restore_symbol_based_on_empty/4
-% restore_symbol_based_on_empty(+Row, +OldPos, -NewRow)
-% Restores the symbol at the old position based on its relative position to the empty spot
-restore_symbol_based_on_empty(Row, OldPos, NewRow) :-
-    find_empty_spot_in_row(Row, EmptyPos),   % Find the position of " "
-    % Calculate the relative position of the old pawn to the empty spot
-    % and restore the corresponding symbol
-    (EmptyPos =:= 1 ->  % If empty spot is at position 1
-        (OldPos = 2 -> NewSymbol = '+' ; OldPos = 3 -> NewSymbol = '-' ; NewSymbol = '*') ;
-     EmptyPos =:= 2 -> % If empty spot is at position 2
-        (OldPos = 3 -> NewSymbol = '+' ; OldPos = 4 -> NewSymbol = '-' ; NewSymbol = '*') ;
-     EmptyPos =:= 3 -> % If empty spot is at position 3
-        (OldPos = 4 -> NewSymbol = '+' ; OldPos = 1 -> NewSymbol = '-' ; NewSymbol = '*') ;
-     EmptyPos =:= 4 -> % If empty spot is at position 4
-        (OldPos = 1 -> NewSymbol = '+' ; OldPos = 2 -> NewSymbol = '-' ; NewSymbol = '*')),
+% Helper to find the empty spot in the square
+find_empty_spot(Square, EmptyIndex) :-
+    nth1(1, Square, ' ', EmptyIndex), !. 
 
-    % Replace the old position with the restored symbol
-    replace_in_row_with_symbol(Row, OldPos, NewSymbol, NewRow).
 
-% Helper predicate: replace_in_row_with_symbol/4
-% replace_in_row_with_symbol(+Row, +Pos, +Symbol, -NewRow)
-% Replaces the symbol at position `Pos` with `Symbol` in the given row.
-replace_in_row_with_symbol(Row, Pos, Symbol, NewRow) :-
-    nth1(Pos, Row, _, TempRow),    % Remove the old symbol
-    nth1(Pos, TempRow, Symbol, NewRow).
+% Restore square based on empty pos
+restore_symbol(Square, EmptyIndex, RestoredSquare) :-
+    (EmptyIndex = 1 -> RestoredSquare = [" ", "+", "*", "-"];
+    EmptyIndex = 2 -> RestoredSquare = ["*", " ", "-", "+"];
+    EmptyIndex = 3 -> RestoredSquare = ["-", "*", "+", " "];
+    EmptyIndex = 4 -> RestoredSquare = ["+", "-", " ", "*"]).
 
-% Helper predicate: move_pawn/7
-% move_pawn(+Old_X, +Old_Y, +New_X, +New_Y, +Board, -NewBoard)
-% Move the pawn symbol to the new position on the board.
-move_pawn(Old_X, Old_Y, New_X, New_Y, Board, NewBoard) :-
-    nth1(Old_Y, Board, OldRow),  % Get the old row
-    replace_in_row_with_symbol(OldRow, Old_X, ' ', NewRow), % Replace old pawn with empty spot
-    replace_in_board(Board, Old_Y, NewRow, TempBoard), % Replace row in the board
-    nth1(New_Y, TempBoard, NewRow),   % Get the new row
-    replace_in_row_with_symbol(NewRow, New_X, '1', NewNewRow), % Place pawn at new location
-    replace_in_board(TempBoard, New_Y, NewNewRow, NewBoard). % Update board
+% Move the pawn
+move(Pawn_Symbol, Old_X, Old_Y, New_X, New_Y, GameState, NewGameState) :-
+   
+    [Board, _, _, Player, ScoreBlue, ScorePink, _, _] = GameState,
 
-% Helper predicate: replace_in_board/4
-% replace_in_board(+Board, +RowIndex, +NewRow, -NewBoard)
-% Replaces a row at a specific index in the board.
+    % Check if move is valid
+    valid_moves_piece(Old_X, Old_Y, Player, Board, Moves),
+    member((New_X, New_Y), Moves),
+
+
+    % Find the old square and restore the symbol to the empty spot
+    nth1(Old_Y, Board, OldSquare),
+    find_empty_spot(OldSquare, EmptyIndex),
+    restore_symbol(OldSquare, EmptyIndex, RestoredOldSquare),
+    replace_in_board(Board, Old_Y, RestoredOldSquare, TempBoard),
+
+    % Move the pawn to the new square
+    nth1(New_Y, TempBoard, NewSquare),
+    replace_in_square(NewSquare, New_X, Pawn_Symbol, FinalNewSquare),
+    replace_in_board(TempBoard, New_Y, FinalNewSquare, FinalBoard),
+
+    update_score(Player, New_X, New_Y, ScoreBlue, ScorePink, NewScoreBlue, NewScorePink),
+
+    % Update the score if needed
+    (   NewScorePink > ScorePink 
+    ->  nth1(New_Y, FinalBoard, NewSquare),
+        find_empty_spot(NewSquare, EmptyIndex),
+        restore_symbol(NewSquare, EmptyIndex, RestoredNewSquare),
+        replace_in_board(FinalBoard, New_Y, RestoredNewSquare, FinalRestoredBoard),
+        NewGameState = [FinalRestoredBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _]
+    ;   NewScoreBlue > ScoreBlue 
+    ->  nth1(New_Y, FinalBoard, NewSquare),
+        find_empty_spot(NewSquare, EmptyIndex),
+        restore_symbol(NewSquare, EmptyIndex, RestoredNewSquare),
+        replace_in_board(FinalBoard, New_Y, RestoredNewSquare, FinalRestoredBoard),
+        NewGameState = [FinalRestoredBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _]
+    ;   NewGameState = [FinalBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _]
+    ).
+
+% Helper to replace a row in the board
 replace_in_board(Board, RowIndex, NewRow, NewBoard) :-
     nth1(RowIndex, Board, _, TempBoard),
     nth1(RowIndex, TempBoard, NewRow, NewBoard).
 
-% Main predicate: move/7
-% move(+Pawn_Symbol, +Old_X, +Old_Y, +New_X, +New_Y, +GameState, -NewGameState)
-move(Pawn_Symbol, Old_X, Old_Y, New_X, New_Y, GameState, NewGameState) :-
-    % Extract relevant parts from GameState
-    [Board, _, _, Player, ScoreBlue, ScorePink, _, _] = GameState,
+% Helper to replace a symbol in a square
+replace_in_square([_, TopRight, BottomLeft, BottomRight], 1, Symbol, [Symbol, TopRight, BottomLeft, BottomRight]).
+replace_in_square([TopLeft, _, BottomLeft, BottomRight], 2, Symbol, [TopLeft, Symbol, BottomLeft, BottomRight]).
+replace_in_square([TopLeft, TopRight, _, BottomRight], 3, Symbol, [TopLeft, TopRight, Symbol, BottomRight]).
+replace_in_square([TopLeft, TopRight, BottomLeft, _], 4, Symbol, [TopLeft, TopRight, BottomLeft, Symbol]).
 
-    % Step 1: Restore the symbol at the old position
-    restore_symbol_based_on_empty(Board, Old_X, Old_Y, TempBoard),
-
-    % Step 2: Move the pawn to the new position
-    move_pawn(Old_X, Old_Y, New_X, New_Y, TempBoard, NewBoard),
-
-    % Step 3: Check for scoring position and update score
-    (Player = pink, New_X = 1, New_Y = 1 -> NewScorePink is ScorePink + 1 ; NewScorePink is ScorePink),
-    (Player = blue, New_X = 4, New_Y = 4 -> NewScoreBlue is ScoreBlue + 1 ; NewScoreBlue is ScoreBlue),
-
-    % Step 4: Return the new game state
-    NewGameState = [NewBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _].
-
-
+% Score update for Pink and Blue
+update_score(pink, X, Y, ScoreBlue, ScorePink, ScoreBlue, NewScorePink) :-
+    Y >= 0, Y =< 3, X = 1,  
+    NewScorePink is ScorePink + 1.
+update_score(blue, X, Y, ScoreBlue, ScorePink, NewScoreBlue, ScorePink) :-
+    Y >= 12, Y =< 15, X = 4,  
+    NewScoreBlue is ScoreBlue + 1.
+update_score(_, _, _, ScoreBlue, ScorePink, ScoreBlue, ScorePink). 
 
 display_game(GameState) :- 
     print_board(GameState).

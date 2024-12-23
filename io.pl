@@ -88,7 +88,7 @@ input_move(GameState, Symbol, Index) :-
     repeat,
     write('What square do you want to move your piece to? Don\'t  forget the . after your choice: '),
     read(Square), 
-    nl,
+    nl,!,
     repeat,
     write('What symbol do you want to move your piece to? Don\'t forget the . after your choice: '),
     read(Symbol),   
