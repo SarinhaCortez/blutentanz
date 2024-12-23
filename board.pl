@@ -196,3 +196,16 @@ blutentanz :-
     repeat_format_color(22, '-'), nl, 
     repeat_format_color(22, '*'), nl.
 
+%input processing
+input_to_indices(Input, Row, Col) :-
+    atom_chars(Input, [ColChar, RowChar]),
+    column_index(ColChar, Col), !,
+    atom_number(RowChar, Row).
+
+% Get the index of the square in the board 
+% Currently receiving +, -, *. what about p for pink, b for blue and n for neutral?
+get_square_index(Board, Input, Char, Index) :-
+    input_to_indices(Input, Row, Col),!,
+    nth1(Row, Board, BoardRow),
+    nth1(Col, BoardRow, Char),!,
+    nth1(Index, BoardRow, Char),!.
