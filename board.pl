@@ -33,12 +33,22 @@ get_square(N, Board, Square) :-
 %displaying the board
 print_board(Board) :-
     nl,
+    blue_finished_figures(Ff),
+    format('Blue already passed ~w figures.', Ff), nl, nl,
+    blue_waiting_figures(F),
+    print_blue_waiting_figures(F),
+    write('  '), repeat_format_color(15, 'o'), nl, nl,
     format('   A   B   C   D  ~n', []),
     write('  _______________  '), nl,
     print_board(Board, 1),
     nl. 
 
-print_board(_, N) :- N > 16, !. 
+print_board(_, N) :- N > 16, 
+    write('  '), repeat_format_color(15, '_'), nl,  nl,
+    pink_waiting_figures(F), print_pink_waiting_figures(F),
+    pink_finished_figures(Ff), nl,
+    format('Pink already passed ~w figures.', Ff), !, nl.
+
 print_board(Board, N) :-
     NNext is N + 4,
     get_square(N, Board, Square1),
@@ -125,6 +135,57 @@ spin_column_aux(Pos, End, Board, NewBoard) :-
     spin_column_aux(Pos1, End, TempBoard, NewBoard).
 
 
+%keep the number of waiting figures
+pink_waiting_figures(5).
+blue_waiting_figures(5).
 
-% board(Board), spin_column(1, Board, NewBoard), print_board(NewBoard).
+%keep the number of finished figures
+pink_finished_figures(0).
+blue_finished_figures(0).
 
+decrease_pink_waiting_figures :-
+    pink_waiting_figures(N),
+    N > 0,
+    N1 is N - 1,
+    retractall(pink_waiting_figures(_)),
+    assert(pink_waiting_figures(N1)).
+
+decrease_blue_waiting_figures :-
+    blue_waiting_figures(N),
+    N > 0,
+    N1 is N - 1,
+    retractall(blue_waiting_figures(_)),
+    assert(blue_waiting_figures(N1)).
+
+blutentanz :-
+    repeat_format_color(22, '+'), nl,
+    repeat_format_color(22, '-'), nl,
+    write('Welcome to Blutentanz!'), nl,
+    repeat_format_color(22, '-'), nl, 
+    repeat_format_color(22, '*'), nl.
+
+%input processing
+input_to_indices(Input, Row, Col) :-
+    atom_chars(Input, [ColChar, RowChar]),
+    column_index(ColChar, Col), !,
+    atom_number(RowChar, Row).
+
+% Get the index of the square in the board 
+% Currently receiving +, -, *. what about p for pink, b for blue and n for neutral?
+get_square_index(Board, Input, Char, Index) :-
+    input_to_indices(Input, Row, Col),!,
+    nth1(Row, Board, BoardRow),
+    nth1(Col, BoardRow, Char),!,
+    nth1(Index, BoardRow, Char),!.
+
+increase_pink_finished_figures :-
+    pink_finished_figures(N),
+    N1 is N + 1,
+    retractall(pink_finished_figures(_)),
+    assert(pink_finished_figures(N1)).
+
+increase_blue_finished_figures :-
+    blue_finished_figures(N),
+    N1 is N + 1,
+    retractall(blue_finished_figures(_)),
+    assert(blue_finished_figures(N1)).
