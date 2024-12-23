@@ -27,36 +27,41 @@ choose_moving_piece(GameState) :-
     [_, _, _, Player] = GameState,
     choose_moving_piece(Player).
 choose_moving_piece(pink) :-
-    board(Board), %tirar
-    print_board(Board),
     possible_pieces_pink(Pieces),
     repeat,
     write('What piece do you want to move?(Don\'t forget the . after your choice)\n Choose from '),
     print(Pieces),
     read(Input),
-    validate_piece_input(Input, Board, NewBoard, Success),
-    Success == 1,
-    print_board(NewBoard), !.
+    validate_piece_input(Input, Pieces, Success),
+    Success == 1, !.
 choose_moving_piece(blue) :-
-    board(Board),
-    print_board(Board), 
     possible_pieces_blue(Pieces),
     repeat,
     write('What piece do you want to move?(Don\'t forget the . after your choice)\n Choose from'),
     print(Pieces),
     read(Input),
-    validate_piece_input(Input, Board, NewBoard, Success),
-    Success == 1,
-    print_board(NewBoard), !.
+    validate_piece_input(Input, Pieces, Success),
+    Success == 1, !.
 
 possible_pieces_blue(ListOfPieces) :-
     blue_waiting_figures(N),
     findall(X, (between(N, 5, X)), ListOfPieces).
-
 possible_pieces_pink(ListOfPieces) :-
     pink_waiting_figures(N),
     findall(X, (between(N, 5, X)), ListOfPieces).
 
+validate_piece_input(Input, Pieces, Success):-
+    member(Input, Pieces),!, Success = 1.
+
+validate_piece_input(_Input, _Pieces, Success) :-
+    Success = 0.
+
+% Move check
 parse_move(GameState, Coords, Symbol) :-
+    [Board, _, _, blue, _, _, _, _] = GameState,
+    member(Symbol, ['-', '*']),
+    
+    
+
 
 choose_move_coords(GameState, )
