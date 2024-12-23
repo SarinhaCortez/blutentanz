@@ -22,7 +22,6 @@ board([
   ['*', ' ', '-', '+']
 ]).
 
-
 %helpers
 shuffle_board(Board, ShuffledBoard) :-
     random_permutation(Board, ShuffledBoard).
@@ -51,18 +50,14 @@ print_board(Board) :-
     nl,
     blue_waiting_figures(F),
     print_blue_waiting_figures(F),
-    write('  '), format_color('o'), format_color('o'), format_color('o'), format_color('o'), format_color('o'),
-    format_color('o'), format_color('o'), format_color('o'), format_color('o'), format_color('o'),
-    format_color('o'), format_color('o'), format_color('o'), format_color('o'), format_color('o'), nl, nl,
+    write('  '), repeat_format_color(15, 'o'), nl, nl,
     format('   A   B   C   D  ~n', []),
     write('  _______________  '), nl,
     print_board(Board, 1),
     nl. 
 
 print_board(_, N) :- N > 16, 
-    write('  '), format_color('_'), format_color('_'), format_color('_'), format_color('_'), format_color('_'),
-    format_color('_'), format_color('_'), format_color('_'), format_color('_'), format_color('_'),
-    format_color('_'), format_color('_'), format_color('_'), format_color('_'), format_color('_'), nl,  nl,
+    write('  '), repeat_format_color(15, '_'), nl,  nl,
     pink_waiting_figures(F), print_pink_waiting_figures(F),!.
 
 print_board(Board, N) :-
@@ -78,7 +73,6 @@ print_board(Board, N) :-
 %formatting options
 
 format_square(Square1, Square2, Square3, Square4, N) :-
-
     Square1 = [Sq1_1, Sq1_2, Sq1_3, Sq1_4],
     Square2 = [Sq2_1, Sq2_2, Sq2_3, Sq2_4],
     Square3 = [Sq3_1, Sq3_2, Sq3_3, Sq3_4],
@@ -98,7 +92,13 @@ format_square(Square1, Square2, Square3, Square4, N) :-
     write('|'),
     nl,
     write('  _______________'), nl.
-    
+
+repeat_format_color(0, _) :- !.
+repeat_format_color(N, Char) :-
+    N > 0,
+    format_color(Char),
+    N1 is N - 1,
+    repeat_format_color(N1, Char).
 
 format_color('*') :- 
     print_in_color(cyan, '*'), !. 
@@ -149,7 +149,6 @@ spin_row_aux(Pos, End, Board, NewBoard) :-
     Pos1 is Pos + 1, 
     spin_row_aux(Pos1, End, TempBoard, NewBoard). 
 
-
 spin_column(Col, Board, NewBoard) :-
     Start is Col, 
     End is 16, 
@@ -162,10 +161,7 @@ spin_column_aux(Pos, End, Board, NewBoard) :-
     Pos1 is Pos + 4,
     spin_column_aux(Pos1, End, TempBoard, NewBoard).
 
-
-
 % board(Board), shuffle_board(Board, ShuffledBoard), spin_column(1, ShuffledBoard, NewBoard), print_board(NewBoard).
-
 
 column_index('a', 1).
 column_index('b', 2).
@@ -192,14 +188,8 @@ decrease_blue_waiting_figures :-
     assert(blue_waiting_figures(N1)).
 
 blutentanz :-
-    format_color('+'), format_color('+'), format_color('+'), format_color('+'), format_color('+'), 
-    format_color('+'), format_color('+'), 
-    format_color('+'), format_color('+'), format_color('+'), format_color('+'), format_color('+'),
-    format_color('+'), format_color('+'), format_color('+'), format_color('+'), format_color('+'),
-    format_color('+'), format_color('+'), format_color('+'), format_color('+'), format_color('+'), nl,
+    repeat_format_color(22, '+'), nl,
+    repeat_format_color(22, '-'), nl,
     write('Welcome to Blutentanz!'), nl,
-    format_color('*'), format_color('*'), format_color('*'), format_color('*'), format_color('*'),
-    format_color('*'), format_color('*'), 
-    format_color('*'), format_color('*'), format_color('*'), format_color('*'), format_color('*'),
-    format_color('*'), format_color('*'), format_color('*'), format_color('*'), format_color('*'),
-    format_color('*'), format_color('*'), format_color('*'), format_color('*'), format_color('*'), nl.
+    repeat_format_color(22, '-'), nl, 
+    repeat_format_color(22, '*'), nl.
