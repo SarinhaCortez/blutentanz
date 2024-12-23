@@ -215,3 +215,9 @@ increase_blue_finished_figures :-
     N1 is N + 1,
     retractall(blue_finished_figures(_)),
     assert(blue_finished_figures(N1)).
+
+column_index('a', 1).
+column_index('b', 2).
+column_index('c', 3).
+column_index('d', 4).
+column_index(A, Col) :- char_code(A, Code), Code >= 65, Code =< 68, Col is Code - 64.
