@@ -49,25 +49,27 @@ print_blue_waiting_figures(N) :-
     print_blue_waiting_figures(N1).
 
 %displaying the board
-print_board(Board) :-
-    nl,
-    blue_finished_figures(Ff),
-    format('Blue already passed ~w figures.', Ff), nl, nl,
-    blue_waiting_figures(F),
-    print_blue_waiting_figures(F),
+print_board(GameState) :-
+    [Board, _, _, _, CSb, _, WB, _] = GameState, !,
+    write(GameState), nl,
+    nl, format('Blue score: ~w figures.', [CSb]), nl, nl,
+    print_blue_waiting_figures(WB),
     write('  '), repeat_format_color(15, 'o'), nl, nl,
-    format('   A   B   C   D  ~n', []),
+    write('   A   B   C   D  \n'),
     write('  _______________  '), nl,
-    print_board(Board, 1),
-    nl. 
+    print_board_rows(1, Board, GameState),
+    nl.
 
-print_board(_, N) :- N > 16, 
-    write('  '), repeat_format_color(15, '_'), nl,  nl,
-    pink_waiting_figures(F), print_pink_waiting_figures(F),
-    pink_finished_figures(Ff), nl,
-    format('Pink already passed ~w figures.', Ff), !, nl.
+% Base case for printing rows: Stop when the row number exceeds 16
+print_board_rows(N, _Board, GameState) :- 
+    N > 16,
+    [_, _, _, _, _, CSp, _, WP] = GameState,
+    write('  '), repeat_format_color(15, '_'), nl, nl,
+    print_pink_waiting_figures(WP), nl,
+    format('Pink score: ~w figures.', [CSp]), !, nl.
 
-print_board(Board, N) :-
+% Recursive case: Print each row and continue with the next row
+print_board_rows(N, Board, GameState) :-
     NNext is N + 4,
     get_square(N, Board, Square1),
     N1 is N + 1, get_square(N1, Board, Square2),
@@ -75,12 +77,10 @@ print_board(Board, N) :-
     N3 is N + 3, get_square(N3, Board, Square4),
     P is (N div 4) + 1,
     format_square(Square1, Square2, Square3, Square4, P),
-    print_board(Board, NNext).
+    print_board_rows(NNext, Board, GameState).
 
-%formatting options
-
+%formatting
 format_square(Square1, Square2, Square3, Square4, N) :-
-
     Square1 = [Sq1_1, Sq1_2, Sq1_3, Sq1_4],
     Square2 = [Sq2_1, Sq2_2, Sq2_3, Sq2_4],
     Square3 = [Sq3_1, Sq3_2, Sq3_3, Sq3_4],
@@ -104,6 +104,13 @@ format_square(Square1, Square2, Square3, Square4, N) :-
 
 format_color('*') :- 
     print_in_color(cyan, '*'), !. 
+
+format_color('o') :- 
+    print_in_color(cyan, '_'), !.
+
+format_color('_') :- 
+    print_in_color(b_magenta, '_'), !.
+
 format_color('+') :- 
     print_in_color(b_magenta, '+'), !.
 

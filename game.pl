@@ -69,41 +69,34 @@ can_move_to(pink, '*') :- !.
 
 valid_moves(GameState, ListOfMoves).
 
-/*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state, and returns a list of all possible 
-valid moves.*/
-
-% C
+/*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state,
+and returns a list of all possible valid moves.*/
 
 play :-
     blutentanz,
-    choose_mode(Mod),
-    choose_start_player(Player),
-    choose_difficulty(Mod, Dif),
-    GameConfig = [Mod, Dif, Player].
+    choose_mode(Mod), !,
+    choose_start_player(Player), !,
+    choose_difficulty(Mod, Dif), !,
+    GameConfig = [Mod, Dif, Player], !,
+    initial_state(GameConfig, GameState),
+    display_game(GameState), nl.
 
 initial_state(GameConfig, GameState) :-
     board(Board),
     shuffle_board(Board, ShuffledBoard),
-    [Mod, Dif, Player] = GameConfig.
-    GameState = [SdBoard, Mode, Dif, Player, 0, 0, 5, 5].
+    [Mode, Dif, Player] = GameConfig,
+    GameState = [ShuffledBoard, Mode, Dif, Player, 0, 0, 5, 5].
 
 game_over(GameState, Winner) :-
-    [_, _, _, blue,_ , _ , _ ,_]  = GameState,
+    [_, _, _, blue, CSb , _ , _ ,_]  = GameState,
     blue_finished_figures(F),
-    F == 5,
-    Winner is blue.
+    CSb == 5,
+    Winner = blue.
 
 game_over(GameState, Winner) :-
-    [_, _, _, pink, _ , _ , _ ,_] = GameState,
-    pink_finished_figures(F),
-    F == 5,
-    Winner is pink.
-
-game_over(GameState, Winner) :-
-    [_, _, _, pink, _ , _ , _ ,_] = GameState,
-    pink_finished_figures(F),
-    F == 5,
-    Winner is pink.
+    [_, _, _, pink, _ , CSp , _ ,_] = GameState,
+    CSp == 5,
+    Winner = pink.
 
 show_winner(GameState, Winner) :-
     write(Winner),
@@ -135,8 +128,10 @@ game_loop(GameState):-
 
 clear_data :-
     retractall(board(_)).
-display_game(GameState) :- [Board, _, _, _] = Gamestate,
-    print_board(Board).
+
+display_game(GameState) :- 
+    print_board(GameState).
+
 move(Board, X, Y, Player, NewBoard).
 % configuration(-GameState)
 % Init GameState with Board, first Player, empty FearList and TotalMoves
