@@ -27,14 +27,6 @@ state to the terminal. Appealing and intuitive visualizations will be valued.
 Flexible game state representations and visualization predicates will also be 
 valued, for instance those that work with any board size. FOR UNIFORMIZATION 
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
-    
-
-% prints current player
-print_turn(GameState) :-
-    [_, _, _, Cp | _] = GameState,
-    write(Cp),
-    write(' ,your turn!'),
-    nl.
 
 
 /*move(+GameState,+Move,-NewGameState).This predicate is responsible for move validation and execution, receiving 
@@ -84,7 +76,7 @@ play :-
     GameConfig = [Mod, Dif, Player], !,
     initial_state(GameConfig, GameState),
     display_game(GameState),
-    %game_loop(GameState).
+    game_loop(GameState).
 
 initial_state(GameConfig, GameState) :-
     board(Board),
@@ -123,11 +115,20 @@ the game state as determined by the value/3 predicate. For human players, it sho
  interact with the user to read the move.*/
 
 % Human vs. Human
-choose_move(GameState, _, X_Index, Y_Index).
+choose_move(GameState, _, (X_Index, Y_Index)).
     [_, 1, _, _, _, _, _, _] = GameState,
     input_move(GameState, Symbol, Y_Index),
     check_x_index(GameState, Symbol, Y_Index, X_Index),
     valid_move(GameState, X_Index, Y_Index).
+/*
+% Human vs. Human
+choose_move(GameState, _, (X, Y)).
+    [Board, 1, _, Player | _] = GameState,
+    input_move(GameState, Symbol, Y),
+    check_x_index(GameState, Symbol, Y, X),
+    valid_moves_piece(X, Y, Player, Board, Moves), 
+    member((X,Y), Moves).
+*/
 
 check_x_index(GameState, Symbol, Y_Index, X_Index) :-
     [Board, _, _, _ | _] = GameState,   
@@ -142,13 +143,14 @@ game_loop(GameState):-
 game_loop(GameState):-
     print_turn(GameState),
     display_game(GameState),
-    choose_spin(GameState),
-    display_game(GameState),
-    call_choose_and_move(3, GameState), !,
+    choose_spin(GameState, SpunGameState),
+    display_game(SpunGameState),
+    call_choose_and_move(3, SpunGameState, NewGameState), !,
     game_loop(NewGameState).
 
 clear_data :-
     retractall(board(_)).
+    
 display_game(GameState) :- 
     print_board(GameState).
 
@@ -239,18 +241,19 @@ configurations([Board,Player,[],0]):-
 
 
 % Main predicate calling choose_move/3 three times
-call_choose_and_move(0, _) :- !. 
+call_choose_and_move(0, _, _) :- !. 
 /*
 should_stop(N).
 call_choose_and_move(N, GameState) :-
     should_stop(N), 
     writeln('Condition met, stopping!'), !.*/
-call_choose_and_move(N, GameState) :-
+
+call_choose_and_move(N, GameState, FinalGameState) :-
     N > 0,
     repeat,
-    choose_moving_piece(GameState, NewGameState, Piece, X, Y),
-    choose_move(GameState, NewX, NewY),
+    choose_moving_piece(GameState, PieceGameState, Piece, X, Y),
+    choose_move(PieceGameState, _, (NewX, NewY)),
     format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
-    move(Pawn_Symbol, Old_X, Old_Y, NewX, NewY, GameState, NewGameState),
+    move(Pawn_Symbol, Old_X, Old_Y, NewX, NewY, PieceGameState, MovedGameState),
     N1 is N - 1,
-    call_choose_move(N1, NewGameState).
+    call_choose_and_move(N1, MovedGameState, FinalGameState).

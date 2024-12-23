@@ -1,13 +1,13 @@
 :- consult(board).
 :- consult(redefs).
 
-choose_spin(GameState) :-
+choose_spin(GameState, NewGameState) :-
     [Board, _, _, _|_] = GameState,
     repeat,
     write('Choose a row (1-4) or column (A-D) to spin (don\'t forget the . after your choice): '),
     read(Input),
     process_spin_input(Input, Board, NewBoard, Success),
-    Success == 1 !.
+    Success == 1, replace_board(GameState, NewBoard, NewGameState), !.
 
 process_spin_input(Input, Board, NewBoard, Success):- 
     member(Input, [1, 2, 3, 4]), !,
@@ -53,8 +53,6 @@ choose_moving_piece(blue, WB, _, NeWB, _, Piece) :-
 
 updateWaiting(Input, Input, NeW) :- NeW is Input - 1, !.
 updateWaiting(_, _, _).
-replace_waiting_pieces([Board, Mode, Dif, Player, CSb, CSp, _, _], NeWB, NeWP, 
-                       [Board, Mode, Dif, Player, CSb, CSp, NeWB, NeWP]).
 
 possible_pieces_blue(ListOfPieces, WB) :-
     findall(X, (between(WB, 5, X)), ListOfPieces).
@@ -66,10 +64,11 @@ getPiece(pink, Input, Piece) :-
 getPiece(blue, Input, Piece) :-
     Piece is Input + 4.
 
-getXY(Piece, X, Y) :-
+getXY(Piece, X, Y, GameState) :-
+    [Board | _] = GameState,
     nth1(X, Board, Row),
     nth1(Y, Row, Piece).
-getXY(Piece, _X, _Y) :-
+getXY(_Piece, X, Y, _GS) :-
     X = 0, Y = 0.
 
 validate_piece_input(Input, Pieces, Success):-
@@ -105,19 +104,17 @@ player_n(2, Color) :- Color = pink.
 
     
 % Move check
-
-input_move(GameState, Symbol, Index) :-
-    [Board, _, _, Cp, _, _, _, _] = GameState,
+input_move(GameState, Symbol, Y_Index) :- %you mean x index?(1,2,3,4)
+    [Board| _] = GameState,
     repeat,
-    write('What square do you want to move your piece to? Don\'t  forget the . after your choice: '),
+    write('What square do you want to move your piece to? Don\'t forget the . after your choice: '),
     read(Square), 
-    nl,!,
-    repeat,
+    nl, %tirei o repeat, não fazia sentido
     write('What symbol do you want to move your piece to? Don\'t forget the . after your choice: '),
     read(Symbol),   
-    get_square_index(Board, Square, Symbol, Index).
+    get_square_index(Board, Square, Symbol, X_Index).
     
-
-
-
-    
+replace_waiting_pieces([Board, Mode, Dif, Player, CSb, CSp, _, _], NeWB, NeWP, 
+                       [Board, Mode, Dif, Player, CSb, CSp, NeWB, NeWP]).
+replace_board([_, Mode, Dif, Player, CSb, CSp, WB, WP], NewBoard, 
+                       [NewBoard, Mode, Dif, Player, CSb, CSp, WB, WP]).

@@ -30,6 +30,17 @@ shuffle_board(Board, ShuffledBoard) :-
 get_square(N, Board, Square) :-
     nth1(N, Board, Square).
 
+format_color(blue) :-
+     print_in_color(cyan, 'B'),
+     print_in_color(cyan, 'l'), 
+     print_in_color(cyan, 'u'),
+     print_in_color(cyan, 'e'), !. 
+format_color(pink) :-
+     print_in_color(b_magenta, 'P'),
+     print_in_color(b_magenta, 'i'), 
+     print_in_color(b_magenta, 'n'),
+     print_in_color(b_magenta, 'k'), !. 
+      
 print_pink_waiting_figures(0) :- nl, !.
 print_pink_waiting_figures(N) :-
     write('  '),
@@ -52,7 +63,8 @@ print_blue_waiting_figures(N) :-
 print_board(GameState) :-
     [Board, _, _, _, CSb, _, WB, _] = GameState, !,
     write(GameState), nl,
-    nl, format('Blue score: ~w figures.', [CSb]), nl, nl,
+    nl, format_color(blue),
+    format(' score: ~w figures', [CSb]), nl, nl,
     print_blue_waiting_figures(WB),
     write('  '), repeat_format_color(15, 'o'), nl, nl,
     write('   A   B   C   D  \n'),
@@ -66,7 +78,8 @@ print_board_rows(N, _Board, GameState) :-
     [_, _, _, _, _, CSp, _, WP] = GameState,
     write('  '), repeat_format_color(15, '_'), nl, nl,
     print_pink_waiting_figures(WP), nl,
-    format('Pink score: ~w figures.', [CSp]), !, nl.
+    format_color(pink),
+    format(' score: ~w figures.', [CSp]), !, nl.
 
 % Recursive case: Print each row and continue with the next row
 print_board_rows(N, Board, GameState) :-
@@ -195,3 +208,9 @@ column_index('b', 2).
 column_index('c', 3).
 column_index('d', 4).
 column_index(A, Col) :- char_code(A, Code), Code >= 65, Code =< 68, Col is Code - 64.
+
+print_turn(GameState) :-
+    [_, _, _, Cp | _] = GameState,
+    format_color(Cp),
+    write(', your turn!'),
+    nl.
