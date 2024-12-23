@@ -29,9 +29,7 @@ state to the terminal. Appealing and intuitive visualizations will be valued.
 Flexible game state representations and visualization predicates will also be 
 valued, for instance those that work with any board size. FOR UNIFORMIZATION 
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
-    [Board, _, _, Cp] = Gamestate,
-    write(Cp),
-    write("  ,your turn!"),
+    [Board, _, _, _] = Gamestate,
     print_board(Board).
 
 
@@ -80,16 +78,16 @@ game_over(GameState, Winner) :-
     [_, _, _, blue] = GameState,
     blue_finished_figures(F),
     F == 5,
-    win_message(blue).
+    Winner is blue.
 
 game_over(GameState, Winner) :-
     [_, _, _, pink] = GameState,
     pink_finished_figures(F),
     F == 5,
-    win_message(pink).
+    Winner is pink.
 
-win_message(Color) :-
-    write(Color),
+show_winner(GameState, Winner) :-
+    write(Winner),
     write(" won!"),
     nl.    
 
