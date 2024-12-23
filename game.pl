@@ -73,13 +73,13 @@ valid_moves(GameState, ListOfMoves).
 valid moves.*/
 
 game_over(GameState, Winner) :-
-    [Board, _, _, blue] = GameState,
+    [_, _, _, blue] = GameState,
     blue_finished_figures(F),
     F == 5,
     win_message(blue).
 
 game_over(GameState, Winner) :-
-    [Board, _, _, pink] = GameState,
+    [_, _, _, pink] = GameState,
     pink_finished_figures(F),
     F == 5,
     win_message(pink).
