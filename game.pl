@@ -22,13 +22,17 @@ initial_state(GameConfig,GameState).
 %depending on the game.*/
 
 
-display_game(GameState).
+display_game(GameState) :-
 /*display_game(+GameState). This predicate receives the current 
 game state (including the player who will make the next move) and prints the game 
 state to the terminal. Appealing and intuitive visualizations will be valued. 
 Flexible game state representations and visualization predicates will also be 
 valued, for instance those that work with any board size. FOR UNIFORMIZATION 
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
+    [Board, _, _, Cp] = Gamestate,
+    write(Cp),
+    write("  ,your turn!"),
+    print_board(Board).
 
 
 move(Board, X, Y, Player, NewBoard) :-
