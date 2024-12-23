@@ -28,7 +28,28 @@ move(GameState, Move, NewGameState).
 /*move(+GameState,+Move,-NewGameState).This predicate is responsible for move validation and execution, receiving 
 the current game state and the move to be executed, and (if the move is valid) 
 returns the new game state after the move is executed.*/
-valid_moves(GameState, ListOfMoves) :-
+
+valid_moves_piece(X, Y, Player, Board, Moves) :-
+    (X = 1, Y >= 5, Y =< 16 -> PossibleMoves = [(2, Y+1), (2, Y), (3, Y+4), (3, Y)];
+     X = 2, Y >= 5, Y =< 15 -> PossibleMoves = [(1, Y-1), (1, Y), (4, Y+4), (4, Y)];
+     X = 3, Y >= 2, Y =< 12 -> PossibleMoves = [(1, Y), (4, Y), (4, Y+1), (1, Y-4)];
+     X = 4, Y >= 1, Y =< 12 -> PossibleMoves = [(2, Y-4), (3, Y), (2, Y), (3, Y-1)];
+     PossibleMoves = []),
+     include(valid_move(Player, Board), PossibleMoves, Moves).
+
+% Check if a move is valid based on the player and the character in the position
+valid_move(Player, Board, (X, Y)) :-
+    nth1(Y, Board, Row),
+    nth1(X, Row, Char),
+    can_move_to(Player, Char).
+
+% Define the rules for moving to a place with a specific character
+can_move_to(blue, '+') :- !.
+can_move_to(blue, '-') :- !.
+can_move_to(pink, '*') :- !.
+can_move_to(pink, '-') :- !.
+
+valid_moves(GameState, ListOfMoves).
 
 /*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state, and returns a list of all possible 
 valid moves.*/
@@ -46,17 +67,17 @@ the best play at the time (using a greedy algorithm), considering the evaluation
 the game state as determined by the value/3 predicate. For human players, it should
  interact with the user to read the move.*/
 
-% game_cycle(+GameState)
-game(GameState):-
+% game_loop(+GameState)
+game_loop(GameState):-
     game_over(GameState, Winner), !,
     display_game(GameState),
     show_winner(GameState, Winner).
-game(GameState):-
+game_loop(GameState):-
     display_game(GameState),
     print_turn(GameState),
     choose_move(GameState, Move),
     move(GameState, Move, NewGameState), !,
-    game(NewGameState).
+    game_loop(NewGameState).
 
 clear_data :-
     retractall(board(_)).

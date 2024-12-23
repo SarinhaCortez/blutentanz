@@ -78,7 +78,8 @@ format_square(Square1, Square2, Square3, Square4, N) :-
     Square3 = [Sq3_1, Sq3_2, Sq3_3, Sq3_4],
     Square4 = [Sq4_1, Sq4_2, Sq4_3, Sq4_4],
     
-    write(N), write('|'), format_color(Sq1_1),format_color(' '), format_color(Sq1_2),
+    write(N), 
+    write('|'), format_color(Sq1_1),format_color(' '), format_color(Sq1_2),
     write('|'), format_color(Sq2_1), format_color(' '), format_color(Sq2_2),
     write('|'), format_color(Sq3_1), format_color(' '), format_color(Sq3_2),
     write('|'), format_color(Sq4_1), format_color(' '), format_color(Sq4_2),
@@ -114,6 +115,7 @@ format_color('_') :-
 
 format_color('-') :-
     print_in_color(black, '-'), !.
+    
 %print players
 format_color('8') :- 
     print_in_color(b_magenta, '8'), !. 
@@ -161,8 +163,8 @@ spin_column_aux(Pos, End, Board, NewBoard) :-
     Pos1 is Pos + 4,
     spin_column_aux(Pos1, End, TempBoard, NewBoard).
 
-% board(Board), shuffle_board(Board, ShuffledBoard), spin_column(1, ShuffledBoard, NewBoard), print_board(NewBoard).
-
+% board(Board), print_board(Board).
+% shuffle_board(Board, ShuffledBoard), spin_column(1, ShuffledBoard, NewBoard)
 column_index('a', 1).
 column_index('b', 2).
 column_index('c', 3).
@@ -193,3 +195,4 @@ blutentanz :-
     write('Welcome to Blutentanz!'), nl,
     repeat_format_color(22, '-'), nl, 
     repeat_format_color(22, '*'), nl.
+
