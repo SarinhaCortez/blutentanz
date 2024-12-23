@@ -170,11 +170,6 @@ spin_column_aux(Pos, End, Board, NewBoard) :-
     Pos1 is Pos + 4,
     spin_column_aux(Pos1, End, TempBoard, NewBoard).
 
-
-%keep the number of waiting figures
-pink_waiting_figures(5).
-blue_waiting_figures(5).
-
 blutentanz :-
     repeat_format_color(22, '+'), nl,
     repeat_format_color(22, '-'), nl,
@@ -194,33 +189,6 @@ get_square_index(Board, Input, Char, Index) :-
     nth1(Row, Board, BoardRow),
     nth1(Col, BoardRow, Char), !,
     Index is (Row - 1) * 4 + Col.
-
-%keep the number of finished figures
-%cannot be used
-pink_finished_figures(0).
-blue_finished_figures(0).
-decrease_pink_waiting_figures :-
-    pink_waiting_figures(N),
-    N > 0,
-    N1 is N - 1,
-    retractall(pink_waiting_figures(_)),
-    assert(pink_waiting_figures(N1)).
-decrease_blue_waiting_figures :-
-    blue_waiting_figures(N),
-    N > 0,
-    N1 is N - 1,
-    retractall(blue_waiting_figures(_)),
-    assert(blue_waiting_figures(N1)).
-increase_pink_finished_figures :-
-    pink_finished_figures(N),
-    N1 is N + 1,
-    retractall(pink_finished_figures(_)),
-    assert(pink_finished_figures(N1)).
-increase_blue_finished_figures :-
-    blue_finished_figures(N),
-    N1 is N + 1,
-    retractall(blue_finished_figures(_)),
-    assert(blue_finished_figures(N1)).
 
 column_index('a', 1).
 column_index('b', 2).
