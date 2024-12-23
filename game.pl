@@ -1,3 +1,6 @@
+:- consult(board).
+:- consult(io).
+
 /*USE MEANINGFUL NAMES FOR PREDICATES AND ARGUMENTS. 
 TRY TO WRITE CODE THAT ‘LOOKS DECLARATIVE’ AND AVOID USING ‘IMPERATIVE-LOOKING’ 
 CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE 
@@ -69,10 +72,22 @@ valid_moves(GameState, ListOfMoves).
 /*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state, and returns a list of all possible 
 valid moves.*/
 
-game_over(GameState, Winner). 
-/*game_over(+GameState, -Winner). This predicate receives the current game state, and verifies whether the game 
-is over, in which case it also identifies the winner (or draw). Note that this 
-predicate should not print anything to the terminal.*/
+game_over(GameState, Winner) :-
+    [Board, _, _, blue] = GameState,
+    blue_finished_figures(F),
+    F == 5,
+    win_message(blue).
+
+game_over(GameState, Winner) :-
+    [Board, _, _, pink] = GameState,
+    pink_finished_figures(F),
+    F == 5,
+    win_message(pink).
+
+win_message(Color) :-
+    write(Color),
+    write(" won!"),
+    nl.    
 
 value(GameState, Player, Value). 
 /*value(+GameState, +Player, -Value). This predicate receives the current game state and returns a value measuring how
