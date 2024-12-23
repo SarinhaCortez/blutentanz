@@ -1,7 +1,7 @@
 :- consult(board).
 :- consult(redefs).
 
-choose_spin :-
+choose_spin(GameState) :-
     [Board, _, _, _|_] = GameState,
     repeat,
     write('Choose a row (1-4) or column (A-D) to spin (don\'t forget the . after your choice): '),

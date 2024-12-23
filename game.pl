@@ -83,7 +83,8 @@ play :-
     choose_difficulty(Mod, Dif), !,
     GameConfig = [Mod, Dif, Player], !,
     initial_state(GameConfig, GameState),
-    display_game(GameState).
+    display_game(GameState),
+    %game_loop(GameState).
 
 initial_state(GameConfig, GameState) :-
     board(Board),
@@ -148,8 +149,8 @@ game_loop(GameState):-
 
 clear_data :-
     retractall(board(_)).
-display_game(GameState) :- [Board, _, _, _] = Gamestate,
-    print_board(Board).
+display_game(GameState) :- 
+    print_board(GameState).
 
 
 % Helper to find the empty spot in the square
