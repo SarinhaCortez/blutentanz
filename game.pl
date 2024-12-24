@@ -87,7 +87,6 @@ initial_state(GameConfig, GameState) :-
 % game over - blue won
 game_over(GameState, Winner) :-
     [_, _, _, blue, CSb , _ , _ ,_]  = GameState,
-    blue_finished_figures(F),
     CSb == 5,
     Winner = blue.
 
@@ -98,8 +97,8 @@ game_over(GameState, Winner) :-
     Winner = pink.
 
 % game over - display winner
-show_winner(GameState, Winner) :-
-    write(Winner),
+show_winner(Winner) :-
+    format_color(Winner),
     write(" won!"),
     nl.    
 
@@ -120,15 +119,6 @@ choose_move(GameState, _, (X_Index, Y_Index)).
     input_move(GameState, Symbol, Y_Index),
     check_x_index(GameState, Symbol, Y_Index, X_Index),
     valid_move(GameState, X_Index, Y_Index).
-/*
-% Human vs. Human
-choose_move(GameState, _, (X, Y)).
-    [Board, 1, _, Player | _] = GameState,
-    input_move(GameState, Symbol, Y),
-    check_x_index(GameState, Symbol, Y, X),
-    valid_moves_piece(X, Y, Player, Board, Moves), 
-    member((X,Y), Moves).
-*/
 
 check_x_index(GameState, Symbol, Y_Index, X_Index) :-
     [Board, _, _, _ | _] = GameState,   
@@ -139,7 +129,7 @@ check_x_index(GameState, Symbol, Y_Index, X_Index) :-
 game_loop(GameState):-
     game_over(GameState, Winner), !,
     display_game(GameState),
-    show_winner(GameState, Winner).
+    show_winner(Winner).
 game_loop(GameState):-
     print_turn(GameState),
     display_game(GameState),
