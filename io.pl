@@ -112,7 +112,7 @@ input_move(GameState, Symbol, Y_Index) :- %you mean x index?(1,2,3,4)
     nl, %tirei o repeat, não fazia sentido
     write('What symbol do you want to move your piece to? Don\'t forget the . after your choice: '),
     read(Symbol),   
-    get_square_index(Board, Square, Symbol, X_Index).
+    get_square_index(Board, Square, Symbol, Y_Index). %square is col n
     
 replace_waiting_pieces([Board, Mode, Dif, Player, CSb, CSp, _, _], NeWB, NeWP, 
                        [Board, Mode, Dif, Player, CSb, CSp, NeWB, NeWP]).
