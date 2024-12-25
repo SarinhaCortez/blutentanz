@@ -37,15 +37,12 @@ returns the new game state after the move is executed.*/
 valid_moves_piece(1, Y, Player, Board, Moves) :-
     PossibleMoves = [(2, Y-1), (2, Y), (3, Y-4), (3, Y)],
     include(valid_move(Player, Board), PossibleMoves, Moves).
-
 valid_moves_piece(2, Y, Player, Board, Moves) :-
     PossibleMoves = [(1, Y+1), (1, Y), (4, Y-4), (4, Y)],
     include(valid_move(Player, Board), PossibleMoves, Moves).
-
 valid_moves_piece(3, Y, Player, Board, Moves) :-
     PossibleMoves = [(1, Y), (4, Y), (4, Y-1), (1, Y+4)],
     include(valid_move(Player, Board), PossibleMoves, Moves).
-
 valid_moves_piece(4, Y, Player, Board, Moves) :-
     PossibleMoves = [(2, Y+4), (3, Y), (2, Y), (3, Y+1)],
     include(valid_move(Player, Board), PossibleMoves, Moves).
@@ -114,16 +111,16 @@ the game state as determined by the value/3 predicate. For human players, it sho
  interact with the user to read the move.*/
 
 % Human vs. Human
-choose_move(GameState, _, (X_Index, Y_Index)).
-    [_, 1, _, _, _, _, _, _] = GameState,
-    input_move(GameState, Symbol, Y_Index),
-    check_x_index(GameState, Symbol, Y_Index, X_Index),
-    valid_move(GameState, X_Index, Y_Index).
-
-check_x_index(GameState, Symbol, Y_Index, X_Index) :-
-    [Board, _, _, _ | _] = GameState,   
-    nth1(Y_Index, Board, Row),         
-    nth1(X_Index, Row, Symbol).
+%internally, square is y and place x
+choose_move(GameState, _, (X, Y)) :-
+    [Board, 1, _, Player, _, _, _, _] = GameState,
+    repeat,
+    input_move(Board, Square, PlaceInSquare),
+    format('input move is x:~w, y:~w', [Square, PlaceInSquare]),
+    valid_moves_piece(Square, PlaceInSquare, Player, Board, Moves),
+    member((PlaceInSquare, Square), Moves),
+    X is PlaceInSquare, 
+    Y is Square.
 
 % game_loop(+GameState)
 game_loop(GameState):-
@@ -136,6 +133,7 @@ game_loop(GameState):-
     choose_spin(GameState, SpunGameState),
     display_game(SpunGameState),
     call_choose_and_move(3, SpunGameState, NewGameState), !,
+    %move
     game_loop(NewGameState).
 
 clear_data :-
@@ -162,10 +160,10 @@ move(Pawn_Symbol, Old_X, Old_Y, New_X, New_Y, GameState, NewGameState) :-
    
     [Board, _, _, Player, ScoreBlue, ScorePink, _, _] = GameState,
 
-    % Check if move is valid
+    % Check if move is valid 
+    % why, if you do valid move on choose move?
     valid_moves_piece(Old_X, Old_Y, Player, Board, Moves),
     member((New_X, New_Y), Moves),
-
 
     % Find the old square and restore the symbol to the empty spot
     nth1(Old_Y, Board, OldSquare),
@@ -241,7 +239,9 @@ call_choose_and_move(N, GameState) :-
 call_choose_and_move(N, GameState, FinalGameState) :-
     N > 0,
     repeat,
-    choose_moving_piece(GameState, PieceGameState, Piece, X, Y),
+    choose_moving_piece(GameState, PieceGameState, Piece, (X, Y)),
+    [_,_,_,Player|_] = PieceGameState,
+    format('Moving piece: ~w~n', Piece),
     choose_move(PieceGameState, _, (NewX, NewY)),
     format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
     move(Pawn_Symbol, Old_X, Old_Y, NewX, NewY, PieceGameState, MovedGameState),

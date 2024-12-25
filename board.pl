@@ -104,6 +104,13 @@ format_square(Square1, Square2, Square3, Square4, N) :-
 
     write('  _______________'), nl.
 
+repeat_format_color(0, _) :- !.
+repeat_format_color(N, Char) :-
+    N > 0,
+    format_color(Char),
+    N1 is N - 1,
+    repeat_format_color(N1, Char).
+
 format_color('*') :- 
     print_in_color(cyan, '*'), !. 
 format_color('o') :- 
@@ -182,19 +189,6 @@ blutentanz :-
     write('Welcome to Blutentanz!'), nl,
     repeat_format_color(22, '-'), nl, 
     repeat_format_color(22, '*'), nl.
-
-%input processing
-input_to_indices(Input, Col, Row) :-
-    atom_chars(Input, [ColChar, RowChar]),
-    column_index(ColChar, Col), !,
-    atom_number(RowChar, Row).
-
-% Get the index of the square in the board 
-get_square_index(Board, Input, Char, Index) :-
-    input_to_indices(Input, Col, Row), !,
-    nth1(Row, Board, BoardRow),
-    nth1(Col, BoardRow, Char), !,
-    Index is (Row - 1) * 4 + Col.
 
 column_index('a', 1).
 column_index('b', 2).

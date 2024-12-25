@@ -21,18 +21,18 @@ process_spin_input(Input, Board, NewBoard, Success) :-
 process_spin_input(_Input, _Board, _NewBoard, Success) :-
     write('Invalid input. Please choose a row (1-4) or column (A-D)'),
     Success = 0.
-
-choose_moving_piece(GameState, NewGameState, Piece, X, Y) :-
+%returns piece and its xy
+choose_moving_piece(GameState, NewGameState, Piece, (X, Y)) :-
     [_, _, _, Player, _, _, WB, WP] = GameState,
     NeWB = WB, NeWP = WP,
     choose_moving_piece(Player, WB, WP, NeWB, NeWP, Piece),
-    getXY(Piece, X, Y),
+    getXY(Piece, X, Y, GameState),
     replace_waiting_pieces(GameState, NeWB, NeWP, NewGameState).
 
 choose_moving_piece(pink, _, WP, _, NeWP, Piece) :-
     possible_pieces_pink(Pieces, WP),
     repeat,
-    write('What piece do you want to move?(Don\'t forget the . after your choice)\n Choose from: '),
+    write('What piece do you want to move?(Don\'t forget the . after your choice)\nChoose from: '),
     print(Pieces),
     read(Input),
     validate_piece_input(Input, Pieces, Success),
@@ -43,7 +43,7 @@ choose_moving_piece(pink, _, WP, _, NeWP, Piece) :-
 choose_moving_piece(blue, WB, _, NeWB, _, Piece) :-
     possible_pieces_blue(Pieces, WB),
     repeat,
-    write('What piece do you want to move?(Don\'t forget the . after your choice)\n Choose from: '),
+    write('What piece do you want to move?(Don\'t forget the . after your choice)\nChoose from: '),
     print(Pieces),
     read(Input),
     validate_piece_input(Input, Pieces, Success),
@@ -87,7 +87,7 @@ choose_difficulty(_, Dif) :-
 
 choose_mode(Mod) :-
     repeat, 
-    write('\nMODE (don\'t forget the . after your choice):\n\n 1. Human vs Human\n 2. Human vs Computer \n 3. Computer vs Computer \n Mode:'),
+    write('\nMODE (don\'t forget the . after your choice):\n\n 1. Human vs Human\n 2. Human vs Computer \n 3. Computer vs Computer \n Mode: '),
     read(Input),
     between(1, 3, Input), !,
     Mod = Input.
@@ -104,16 +104,38 @@ player_n(2, Color) :- Color = pink.
 
     
 % Move check
-input_move(GameState, Symbol, Y_Index) :- %you mean x index?(1,2,3,4)
-    [Board| _] = GameState,
+input_move(Board, Square, PlaceInSquare) :-%internally, square is y and place x
     repeat,
     write('What square do you want to move your piece to? Don\'t forget the . after your choice: '),
-    read(Square), 
+    read(SqInput), 
     nl, %tirei o repeat, não fazia sentido
-    write('What symbol do you want to move your piece to? Don\'t forget the . after your choice: '),
-    read(Symbol),   
-    get_square_index(Board, Square, Symbol, Y_Index). %square is col n
-    
+    write('What symbol (+, -, *) do you want to move your piece to? Don\'t forget the . after your choice: '),
+    read(Symbol), nl,
+    get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success), %square is col n
+    format('sqinput is ~w, get square index is x:~w, y:~w, Success is ~w ~n', [SqInput, Square, PlaceInSquare, Success]),
+    Success == 1. 
+
+% Get the index of the square in the board 
+get_square_index(Board, Input, Symbol, SquareY, PlaceInSquare, Success) :-
+    validate_move_input(Input, ColVisual, RowVisual), !,
+    write('Validated input.\n'), 
+    SquareY = (RowVisual - 1) * 4 + ColVisual,
+    nth1(SquareY, Board, SqContent), !,
+    nth1(PlaceInSquare, SqContent, Symbol), !,
+    Success = 1. 
+get_square_index(_Board, _Input, _Symbol, _SquareY, _PlaceInSquare, Success) :-
+    write('Oops! This position is not available in the square you chose! Try again.\n'),
+    Success = 0.
+
+%input processing
+validate_move_input(Input, Col, Row) :- 
+    atom_chars(Input, [ColChar, RowChar]),
+    member(RowChar, ['1', '2', '3', '4']), !,
+    member(ColChar, ['a', 'b', 'c', 'd', 'A', 'B', 'C', 'D']), !,
+    column_index(ColChar, Col), !, 
+    char_code(RowChar, Code),
+    Row is Code - 48.
+
 replace_waiting_pieces([Board, Mode, Dif, Player, CSb, CSp, _, _], NeWB, NeWP, 
                        [Board, Mode, Dif, Player, CSb, CSp, NeWB, NeWP]).
 replace_board([_, Mode, Dif, Player, CSb, CSp, WB, WP], NewBoard, 
