@@ -4,7 +4,7 @@
 choose_spin(GameState, NewGameState) :-
     [Board, _, _, _|_] = GameState,
     repeat,
-    write('Choose a row (1-4) or column (A-D) to spin (don\'t forget the . after your choice): '),
+    write('Choose a row (1-4) or column (A-D) to spin (Input your choice, then press ENTER, . ,ENTER): '),
     read(Input),
     process_spin_input(Input, Board, NewBoard, Success),
     Success == 1, replace_board(GameState, NewBoard, NewGameState), !.
@@ -32,7 +32,7 @@ choose_moving_piece(GameState, NewGameState, Piece, (X, Y)) :-
 choose_moving_piece(pink, _, WP, _, NeWP, Piece) :-
     possible_pieces_pink(Pieces, WP),
     repeat,
-    write('What piece do you want to move?(Don\'t forget the . after your choice)\nChoose from: '),
+    write('What piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
     print(Pieces),
     read(Input),
     validate_piece_input(Input, Pieces, Success),
@@ -43,7 +43,7 @@ choose_moving_piece(pink, _, WP, _, NeWP, Piece) :-
 choose_moving_piece(blue, WB, _, NeWB, _, Piece) :-
     possible_pieces_blue(Pieces, WB),
     repeat,
-    write('What piece do you want to move?(Don\'t forget the . after your choice)\nChoose from: '),
+    write('What piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\n You can choose from '),
     print(Pieces),
     read(Input),
     validate_piece_input(Input, Pieces, Success),
@@ -80,21 +80,21 @@ validate_piece_input(_Input, _Pieces, Success) :-
 choose_difficulty(1, Dif) :- Dif = 1.
 choose_difficulty(_, Dif) :-
     repeat, 
-    write('\nDIFFICULTY (don\'t forget the . after your choice):\n\n 1. Einfach\n 2. Schwer \n Difficulty:'),
+    write('\nDIFFICULTY (Input 1 or 2, then press ENTER, . ,ENTER): :\n\n 1. Einfach\n 2. Schwer \n\nDifficulty:'),
     read(Input),
     between(1, 2, Input), !,
     Dif = Input, !.
 
 choose_mode(Mod) :-
     repeat, 
-    write('\nMODE (don\'t forget the . after your choice):\n\n 1. Human vs Human\n 2. Human vs Computer \n 3. Computer vs Computer \n Mode: '),
+    write('\nMODE  (Input 1, 2 or 3, then press ENTER, . ,ENTER):\n\n 1. Human vs Human\n 2. Human vs Computer \n 3. Computer vs Computer \n\nMode: '),
     read(Input),
     between(1, 3, Input), !,
     Mod = Input.
 
 choose_start_player(StartPlayer) :-
     repeat, 
-    write('\nSTART PLAYER (don\'t forget the . after your choice):\n\n 1. Blue\n 2. Pink \n Start Player:'),
+    write('\nSTART PLAYER  (Input 1 or 2, then press ENTER, . ,ENTER):\n\n 1. Blue\n 2. Pink \n\nStart Player:'),
     read(Input),
     between(1, 2, Input), !,
     player_n(Input, StartPlayer).
@@ -106,20 +106,20 @@ player_n(2, Color) :- Color = pink.
 % Move check
 input_move(Board, Square, PlaceInSquare) :-%internally, square is y and place x
     repeat,
-    write('What square do you want to move your piece to? Don\'t forget the . after your choice: '),
+    write('What square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(SqInput), 
     nl, %tirei o repeat, não fazia sentido
-    write('What symbol (+, -, *) do you want to move your piece to? Don\'t forget the . after your choice: '),
+    write('What symbol (+, -, *) do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(Symbol), nl,
     get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success), %square is col n
-    format('sqinput is ~w, get square index is x:~w, y:~w, Success is ~w ~n', [SqInput, Square, PlaceInSquare, Success]),
+    format('sqinput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
     Success == 1. 
 
 % Get the index of the square in the board 
 get_square_index(Board, Input, Symbol, SquareY, PlaceInSquare, Success) :-
     validate_move_input(Input, ColVisual, RowVisual), !,
-    write('Validated input.\n'), 
-    SquareY = (RowVisual - 1) * 4 + ColVisual,
+    write('Input passed Validation.\n'), 
+    SquareY is (RowVisual - 1) * 4 + ColVisual, !,
     nth1(SquareY, Board, SqContent), !,
     nth1(PlaceInSquare, SqContent, Symbol), !,
     Success = 1. 
