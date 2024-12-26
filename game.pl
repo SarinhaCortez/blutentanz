@@ -159,7 +159,6 @@ move(GameState, Move, NewGameState) :-
     [Board, _, _, CurrPiece | _] = GameState,
     getXY(CurrPiece, Old_X, Old_Y, Board),!,
     clean_square(Old_X, Old_Y, Board, TempBoard),!,
-    write('Got after clean square!\n'),
     nth1(Y, TempBoard, Square), !,
     replace_in_square(Square, X, CurrPiece, NewSquare), !,
     write('Got after replace in square!\n'),
@@ -185,7 +184,8 @@ is_score_point(blue, X, Y) :-
 % Helper to replace a row in the board
 replace_in_board(Board, RowIndex, NewRow, NewBoard) :-
     nth1(RowIndex, Board, _, TempBoard),
-    nth1(RowIndex, TempBoard, NewRow, NewBoard).
+    nth1(RowIndex, TempBoard, NewRow, NewBoard). % move fails here
+    
 clean_square(0, 0, Board, TempBoard) :- 
     write('Your piece is just starting!\n'), 
     TempBoard = Board, !.
