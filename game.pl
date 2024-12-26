@@ -156,16 +156,14 @@ display_game(GameState) :-
 
 move(GameState, Move, NewGameState) :-
     Move = (X, Y),
-    [Board, _, _, CurrPiece | _] = GameState,
+    [Board, _, _, _, CurrPiece | _] = GameState,
     getXY(CurrPiece, Old_X, Old_Y, Board),!,
     clean_square(Old_X, Old_Y, Board, TempBoard),!,
     nth1(Y, TempBoard, Square), !,
     replace_in_square(Square, X, CurrPiece, NewSquare), !,
-    write('Got after replace in square!\n'),
     replace_in_board(TempBoard, Y, NewSquare, NewBoard),!,
-    write('Got after replace in board!\n'),
-    replace_board(GameState, NewBoard, TempState), !,
-    update_score(TempState, X, Y, NewGameState).
+    replace_board(GameState, NewBoard, TempState), 
+    update_score(TempState, X, Y, NewGameState), !.
 
 update_score(GameState, X, Y, NewGameState) :-
     [Board,_,_,Player |_] = GameState,
@@ -174,18 +172,25 @@ update_score(GameState, X, Y, NewGameState) :-
     format_color(Player), write('You won a score point!\n'),
     replace_board(GameState, TempBoard, TempGameState), !,
     increase_score(TempGameState, NewGameState).
-
+update_score(GameState, _, _, NewGameState) :- 
+    NewGameState = GameState.
 is_score_point(pink, X, Y) :-
     ScoringPos = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],
     member((X, Y), ScoringPos), !.
 is_score_point(blue, X, Y) :-
     ScoringPos = [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)],
     member((X, Y), ScoringPos), !.
+
 % Helper to replace a row in the board
 replace_in_board(Board, RowIndex, NewRow, NewBoard) :-
-    nth1(RowIndex, Board, _, TempBoard),
-    nth1(RowIndex, TempBoard, NewRow, NewBoard). % move fails here
-    
+    same_length(Board, NewBoard),
+    replace_row(Board, RowIndex, NewRow, NewBoard).
+replace_row([_|Rest], 1, NewRow, [NewRow|Rest]). % Replace the first row when RowIndex is 1
+replace_row([Row|Rest], RowIndex, NewRow, [Row|NewRest]) :-
+    RowIndex > 1,
+    NextIndex is RowIndex - 1,
+    replace_row(Rest, NextIndex, NewRow, NewRest).
+
 clean_square(0, 0, Board, TempBoard) :- 
     write('Your piece is just starting!\n'), 
     TempBoard = Board, !.
@@ -240,6 +245,7 @@ call_choose_and_move(N, GameState, FinalGameState) :-
     format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
     write('Preparing to enter move :)\n'),
     move(PieceGameState,(NewX, NewY), MovedGameState),
+    write('Exited move successfuly!'),
     display_game(MovedGameState),
     N1 is N - 1,
     call_choose_and_move(N1, MovedGameState, FinalGameState).
