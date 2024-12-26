@@ -157,18 +157,21 @@ display_game(GameState) :-
 move(GameState, Move, NewGameState) :-
     Move = (X, Y),
     [Board, _, _, CurrPiece | _] = GameState,
-    getXY(Piece, Old_X, Old_Y, Board),!,
-    clean_square(Piece, Old_X, Old_Y, Board, TempBoard),!,
+    getXY(CurrPiece, Old_X, Old_Y, Board),!,
+    clean_square(Old_X, Old_Y, Board, TempBoard),!,
+    write('Got after clean square!\n'),
     nth1(Y, TempBoard, Square), !,
-    replace_in_square(Square, X,CurrPiece, NewSquare), !,
+    replace_in_square(Square, X, CurrPiece, NewSquare), !,
+    write('Got after replace in square!\n'),
     replace_in_board(TempBoard, Y, NewSquare, NewBoard),!,
+    write('Got after replace in board!\n'),
     replace_board(GameState, NewBoard, TempState), !,
     update_score(TempState, X, Y, NewGameState).
 
 update_score(GameState, X, Y, NewGameState) :-
-    [Board,_,_,Player, Piece|_] = GameState,
+    [Board,_,_,Player |_] = GameState,
     is_score_point(Player, X, Y), !,
-    clean_square(Piece, X, Y, Board, TempBoard),
+    clean_square(X, Y, Board, TempBoard),
     format_color(Player), write('You won a score point!\n'),
     replace_board(GameState, TempBoard, TempGameState), !,
     increase_score(TempGameState, NewGameState).
@@ -183,9 +186,12 @@ is_score_point(blue, X, Y) :-
 replace_in_board(Board, RowIndex, NewRow, NewBoard) :-
     nth1(RowIndex, Board, _, TempBoard),
     nth1(RowIndex, TempBoard, NewRow, NewBoard).
-
+clean_square(0, 0, Board, TempBoard) :- 
+    write('Your piece is just starting!\n'), 
+    TempBoard = Board, !.
 %clean square
 clean_square(X, Y, Board, TempBoard) :-
+    X>0, Y > 0,
     nth1(Y, Board, Square),!,
     nth1(SpaceX, Square, ' '),!,
     getSymbol(SpaceX, X, Symbol), %gets the symbol to replace
@@ -196,10 +202,10 @@ getSymbol(1, X, Symbol) :- nth1(X, [' ', '+', '*', '-'], Symbol), !.
 getSymbol(2, X, Symbol) :- nth1(X, ['*', ' ', '-', '+'], Symbol), !.
 getSymbol(3, X, Symbol) :- nth1(X, ['+', '-', ' ', '*'], Symbol), !.
 getSymbol(4, X, Symbol) :- nth1(X, ['-', '*', '+', ' '], Symbol), !.
-replace_in_square([_, TopRight, BottomLeft, BottomRight], 1, Symbol, [Symbol, TopRight, BottomLeft, BottomRight]), !.
-replace_in_square([TopLeft, _, BottomLeft, BottomRight], 2, Symbol, [TopLeft, Symbol, BottomLeft, BottomRight]), !.
-replace_in_square([TopLeft, TopRight, _, BottomRight], 3, Symbol, [TopLeft, TopRight, Symbol, BottomRight]), !.
-replace_in_square([TopLeft, TopRight, BottomLeft, _], 4, Symbol, [TopLeft, TopRight, BottomLeft, Symbol]), !.
+replace_in_square([_, TopRight, BottomLeft, BottomRight], 1, Symbol, [Symbol, TopRight, BottomLeft, BottomRight]) :- !.
+replace_in_square([TopLeft, _, BottomLeft, BottomRight], 2, Symbol, [TopLeft, Symbol, BottomLeft, BottomRight]):- !.
+replace_in_square([TopLeft, TopRight, _, BottomRight], 3, Symbol, [TopLeft, TopRight, Symbol, BottomRight]):-  !.
+replace_in_square([TopLeft, TopRight, BottomLeft, _], 4, Symbol, [TopLeft, TopRight, BottomLeft, Symbol]):-  !.
 
 
 display_game(GameState) :- 
@@ -234,5 +240,6 @@ call_choose_and_move(N, GameState, FinalGameState) :-
     format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
     write('Preparing to enter move :)\n'),
     move(PieceGameState,(NewX, NewY), MovedGameState),
+    display_game(MovedGameState),
     N1 is N - 1,
     call_choose_and_move(N1, MovedGameState, FinalGameState).

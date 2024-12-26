@@ -108,7 +108,7 @@ input_move(Board, Square, PlaceInSquare) :-%internally, square is y and place x
     write('What square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(SqInput), 
     nl, %tirei o repeat, não fazia sentido
-    write('What symbol (+, -, *) do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
+    write('What symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(Symbol), nl,
     get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success), %square is col n
     format('sqinput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
