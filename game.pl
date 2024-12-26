@@ -126,17 +126,29 @@ computer player. Level 1 should return a random valid move. Level 2 should retur
 the best play at the time (using a greedy algorithm), considering the evaluation of
 the game state as determined by the value/3 predicate. For human players, it should
  interact with the user to read the move.*/
-
+% input_move is now choose move in order to follow the conventions
+choose_move(GameState, Mode, (Square, PlaceInSquare)) :-%internally, square is y and place x
+    [Board |_] = GameState,
+    repeat,
+    write('What square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
+    read(SqInput), 
+    nl, %tirei o repeat, não fazia sentido
+    write('What symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
+    read(Symbol), nl,
+    get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success), %square is col n
+    format('sqinput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
+    Success == 1. 
 % Human vs. Human
 %internally, square is y and place x
-choose_move(GameState, _, Move, PieceGameState) :-
-    (X, Y) = Move,
-    [_, 1, _|_] = GameState,
+%choose move is now construct
+construct_move(GameState, Move, PieceGameState) :-
+    Move = (X, Y),
+    [_, 1 | _] = GameState,
     repeat,
     choose_moving_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
     format('Moving piece: ~w~n', Piece),
-    [Board, 1, _, Player, _, _, _, _, _] = PieceGameState,
-    input_move(Board, Square, PlaceInSquare),
+    [_, 1, _, Player | _ ] = PieceGameState,
+    choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
     format('Input move is x:~w, y:~w~n', [PlaceInSquare, Square]),
     valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
     write('got after valid_moves_piece!\n'),
@@ -146,7 +158,7 @@ choose_move(GameState, _, Move, PieceGameState) :-
     format('~w is moving from x:~w y:~w to x:~w y:~w ~n', [Player, Curr_X, Curr_Y, Square, PlaceInSquare]),
     X is PlaceInSquare, 
     Y is Square,
-    write('choose move reached its end!\n'), !.
+    write('Construct move reached its end!\n'), !.
 
 % game_loop(+GameState)
 game_loop(GameState):-
@@ -160,7 +172,7 @@ game_loop(GameState):-
     display_game(SpunGameState),
     call_choose_and_move(3, SpunGameState, FinalGameState), !,
     switch_turn(FinalGameState, OtherPlayerGameState)
-    game_loop(OtherPlayerGameState).
+    game_loop(OtherGameState).
 
 clear_data :-
     retractall(board(_)).
@@ -244,21 +256,21 @@ configurations([Board,Player,[],0]):-
 % Example condition predicate (can be customized)
 
 
-% Main predicate calling choose_move/3 three times
+% Main predicate calling construct_move/3 three times
 
 /*
 should_stop(N).
 call_choose_and_move(N, GameState) :-
     should_stop(N), 
     writeln('Condition met, stopping!'), !.*/
-call_choose_and_move(0, _, _) :- !. 
-call_choose_and_move(N, GameState, FinalGameState) :-
+call_construct_and_move(0, _, _) :- !. 
+call_construct_and_move(N, GameState, FinalGameState) :-
     N > 0,
     repeat,
-    choose_move(GameState, _, (NewX, NewY), PieceGameState),
+    construct_move(GameState, _, (NewX, NewY), PieceGameState),
     format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
     move(PieceGameState,(NewX, NewY), MovedGameState),
     write('Exited move successfuly!'),
     display_game(MovedGameState),
     N1 is N - 1,
-    call_choose_and_move(N1, MovedGameState, FinalGameState).
+    call_construct_and_move(N1, MovedGameState, FinalGameState).

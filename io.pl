@@ -102,18 +102,6 @@ choose_start_player(StartPlayer) :-
 player_n(1, Color) :- Color = blue.
 player_n(2, Color) :- Color = pink.
 
-    
-% Move check
-input_move(Board, Square, PlaceInSquare) :-%internally, square is y and place x
-    repeat,
-    write('What square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
-    read(SqInput), 
-    nl, %tirei o repeat, não fazia sentido
-    write('What symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
-    read(Symbol), nl,
-    get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success), %square is col n
-    format('sqinput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
-    Success == 1. 
 
 % Get the index of the square in the board 
 get_square_index(Board, Input, Symbol, SquareY, PlaceInSquare, Success) :-
