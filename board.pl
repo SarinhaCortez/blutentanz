@@ -22,7 +22,6 @@ board([
   ['*', ' ', '-', '+']
 ]).
 
-
 %helpers
 shuffle_board(Board, ShuffledBoard) :-
     random_permutation(Board, ShuffledBoard).

@@ -19,13 +19,14 @@ process_spin_input(Input, Board, NewBoard, Success) :-
     spin_column(Col, Board, NewBoard),
     Success = 1.
 process_spin_input(_Input, _Board, _NewBoard, Success) :-
-    write('Invalid input. Please choose a row (1-4) or column (A-D)'),
+    write('Invalid input. Please choose a row (1-4) or column (A-D)\n'),
     Success = 0.
 %returns piece and its xy
 choose_moving_piece(GameState, NewGameState, Piece, (X, Y)) :-
     [Board, _, _, Player, _, _, _, WB, WP] = GameState,
     choose_moving_piece(Player, WB, WP, NewW, Piece),
     getXY(Piece, X, Y, Board),
+    format('Piece is in x: ~w, y: ~w\n', [X, Y]),
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, NewGameState).
 
 choose_moving_piece(pink, _, WP, NewW, Piece) :-
@@ -65,8 +66,8 @@ getPiece(blue, Input, Piece) :-
     Piece is Input + 4.
 
 getXY(Piece, X, Y, Board) :-
-    nth1(X, Board, Row),
-    nth1(Y, Row, Piece).
+    nth1(Y, Board, Row),
+    nth1(X, Row, Piece).
 getXY(_Piece, X, Y, _B) :-
     X = 0, Y = 0.
 
@@ -145,3 +146,8 @@ increase_score([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP], NewScor
     NewScore is CSp + 1.
 increase_score([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP], NewScore, [Board, Mode, Dif, blue, CurrentPiece, NewScore, CSp, WB, WP]) :-
     NewScore is CSb + 1.
+
+switch_turn([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP],
+                       [Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP]).
+switch_turn([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP],
+                       [Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP]).

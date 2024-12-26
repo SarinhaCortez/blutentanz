@@ -40,18 +40,30 @@ valid_moves_piece(0, 0, pink, Board, Moves) :-
     PossibleMoves = [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)],
     include(valid_move(pink, Board), PossibleMoves, Moves).
 valid_moves_piece(1, Y, Player, Board, Moves) :-
-    PossibleMoves = [(2, Y-1), (2, Y), (3, Y-4), (3, Y)],
+    findall((X, ResY), 
+            (member((X, ExprY), [(2, Y-1), (2, Y), (3, Y-4), (3, Y)]), 
+            ResY is ExprY),
+            PossibleMoves),
     include(valid_move(Player, Board), PossibleMoves, Moves).
 valid_moves_piece(2, Y, Player, Board, Moves) :-
-    PossibleMoves = [(1, Y+1), (1, Y), (4, Y-4), (4, Y)],
+    findall((X, ResY), 
+            (member((X, ExprY), [(1, Y+1), (1, Y), (4, Y-4), (4, Y)]), 
+            ResY is ExprY),
+            PossibleMoves),
     include(valid_move(Player, Board), PossibleMoves, Moves).
 valid_moves_piece(3, Y, Player, Board, Moves) :-
-    PossibleMoves = [(1, Y), (4, Y), (4, Y-1), (1, Y+4)],
+    findall((X, ResY), 
+            (member((X, ExprY), [(1, Y), (4, Y), (4, Y-1), (1, Y+4)]), 
+            ResY is ExprY),
+            PossibleMoves),
     include(valid_move(Player, Board), PossibleMoves, Moves).
 valid_moves_piece(4, Y, Player, Board, Moves) :-
-    PossibleMoves = [(2, Y+4), (3, Y), (2, Y), (3, Y+1)],
+    findall((X, ResY), 
+            (member((X, ExprY), [(2, Y+4), (3, Y), (2, Y), (3, Y+1)]), 
+            ResY is ExprY),
+            PossibleMoves),
     include(valid_move(Player, Board), PossibleMoves, Moves).
-
+%(1, 2) -> (3, 2) mas (4, 1)
 % Check if a move is valid based on the player and the character in the position
 valid_move(Player, Board, (X, Y)) :-
     length(Board, Length),
@@ -125,10 +137,12 @@ choose_move(GameState, _, Move, PieceGameState) :-
     format('Moving piece: ~w~n', Piece),
     [Board, 1, _, Player, _, _, _, _, _] = PieceGameState,
     input_move(Board, Square, PlaceInSquare),
-    format('input move is x:~w, y:~w~n', [PlaceInSquare, Square]),
+    format('Input move is x:~w, y:~w~n', [PlaceInSquare, Square]),
     valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
-    member((PlaceInSquare, Square), Moves),
+    write('got after valid_moves_piece!\n'),
     print(Moves),nl,
+    member((PlaceInSquare, Square), Moves),
+    write('Move is valid! \n'),
     format('~w is moving from x:~w y:~w to x:~w y:~w ~n', [Player, Curr_X, Curr_Y, Square, PlaceInSquare]),
     X is PlaceInSquare, 
     Y is Square,
@@ -144,9 +158,9 @@ game_loop(GameState):-
     display_game(GameState),
     choose_spin(GameState, SpunGameState),
     display_game(SpunGameState),
-    call_choose_and_move(3, SpunGameState, NewGameState), !,
-    %move
-    game_loop(NewGameState).
+    call_choose_and_move(3, SpunGameState, FinalGameState), !,
+    switch_turn(FinalGameState, OtherPlayerGameState)
+    game_loop(OtherPlayerGameState).
 
 clear_data :-
     retractall(board(_)).
@@ -231,19 +245,18 @@ configurations([Board,Player,[],0]):-
 
 
 % Main predicate calling choose_move/3 three times
-call_choose_and_move(0, _, _) :- !. 
+
 /*
 should_stop(N).
 call_choose_and_move(N, GameState) :-
     should_stop(N), 
     writeln('Condition met, stopping!'), !.*/
-
+call_choose_and_move(0, _, _) :- !. 
 call_choose_and_move(N, GameState, FinalGameState) :-
     N > 0,
     repeat,
     choose_move(GameState, _, (NewX, NewY), PieceGameState),
     format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
-    write('Preparing to enter move :)\n'),
     move(PieceGameState,(NewX, NewY), MovedGameState),
     write('Exited move successfuly!'),
     display_game(MovedGameState),
