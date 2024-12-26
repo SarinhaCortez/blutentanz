@@ -134,8 +134,3 @@ increase_score([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP], NewScor
     NewScore is CSp + 1.
 increase_score([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP], NewScore, [Board, Mode, Dif, blue, CurrentPiece, NewScore, CSp, WB, WP]) :-
     NewScore is CSb + 1.
-
-switch_turn([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP],
-                       [Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP]).
-switch_turn([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP],
-                       [Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP]).
