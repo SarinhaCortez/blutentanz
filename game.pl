@@ -84,17 +84,17 @@ initial_state(GameConfig, GameState) :-
     board(Board),
     shuffle_board(Board, ShuffledBoard),
     [Mode, Dif, Player] = GameConfig,
-    GameState = [ShuffledBoard, Mode, Dif, Player, 0, 0, 5, 5].
+    GameState = [ShuffledBoard, Mode, Dif, Player, -1, 0, 0, 5, 5]. %minus one is current piece to move
 
 % game over - blue won
 game_over(GameState, Winner) :-
-    [_, _, _, blue, CSb , _ , _ ,_]  = GameState,
+    [_, _, _, blue, _, CSb , _ , _ ,_]  = GameState,
     CSb == 5,
     Winner = blue.
 
 % game over - pink won
 game_over(GameState, Winner) :-
-    [_, _, _, pink, _ , CSp , _ ,_] = GameState,
+    [_, _, _, pink, _,  _ , CSp , _ ,_] = GameState,
     CSp == 5,
     Winner = pink.
 
@@ -117,12 +117,13 @@ the game state as determined by the value/3 predicate. For human players, it sho
 
 % Human vs. Human
 %internally, square is y and place x
-choose_move(GameState, _, (X, Y), PieceGameState) :-
+choose_move(GameState, _, Move, PieceGameState) :-
+    (X, Y) = Move,
     [_, 1, _|_] = GameState,
     repeat,
     choose_moving_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
     format('Moving piece: ~w~n', Piece),
-    [Board, 1, _, Player, _, _, _, _] = PieceGameState,
+    [Board, 1, _, Player, _, _, _, _, _] = PieceGameState,
     input_move(Board, Square, PlaceInSquare),
     format('input move is x:~w, y:~w~n', [PlaceInSquare, Square]),
     valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
@@ -153,69 +154,53 @@ clear_data :-
 display_game(GameState) :- 
     print_board(GameState).
 
+move(GameState, Move, NewGameState) :-
+    Move = (X, Y),
+    [Board, _, _, CurrPiece | _] = GameState,
+    getXY(Piece, Old_X, Old_Y, Board),!,
+    clean_square(Piece, Old_X, Old_Y, Board, TempBoard),!,
+    nth1(Y, TempBoard, Square), !,
+    replace_in_square(Square, X,CurrPiece, NewSquare), !,
+    replace_in_board(TempBoard, Y, NewSquare, NewBoard),!,
+    replace_board(GameState, NewBoard, TempState), !,
+    update_score(TempState, X, Y, NewGameState).
 
-% Helper to find the empty spot in the square
-find_empty_spot(Square, EmptyIndex) :-
-    nth1(1, Square, ' ', EmptyIndex), !. 
+update_score(GameState, X, Y, NewGameState) :-
+    [Board,_,_,Player, Piece|_] = GameState,
+    is_score_point(Player, X, Y), !,
+    clean_square(Piece, X, Y, Board, TempBoard),
+    format_color(Player), write('You won a score point!\n'),
+    replace_board(GameState, TempBoard, TempGameState), !,
+    increase_score(TempGameState, NewGameState).
 
-
-% Restore square based on empty pos
-restore_symbol(Square, 1, [" ", "+", "*", "-"]).
-restore_symbol(Square, 2, ["*", " ", "-", "+"]).
-restore_symbol(Square, 3, ["-", "*", "+", " "]).
-restore_symbol(Square, 4, ["+", "-", " ", "*"]).
-
-
-% Move the pawn
-move(Pawn_Symbol, Old_X, Old_Y, New_X, New_Y, GameState, NewGameState) :-
-   
-    [Board, _, _, Player, ScoreBlue, ScorePink, _, _] = GameState,
-
-    % Find the old square and restore the symbol to the empty spot
-    nth1(Old_Y, Board, OldSquare),
-    find_empty_spot(OldSquare, EmptyIndex),
-    restore_symbol(OldSquare, EmptyIndex, RestoredOldSquare),
-    replace_in_board(Board, Old_Y, RestoredOldSquare, TempBoard),
-
-    % Move the pawn to the new square
-    nth1(New_Y, TempBoard, NewSquare),
-    replace_in_square(NewSquare, New_X, Pawn_Symbol, FinalNewSquare),
-    replace_in_board(TempBoard, New_Y, FinalNewSquare, FinalBoard),
-
-    score_update(Player, New_X, New_Y, ScoreBlue, ScorePink, NewScoreBlue, NewScorePink, FinalBoard, FinalRestoredBoard),
-
-    NewGameState = [FinalRestoredBoard, _, _, Player, NewScoreBlue, NewScorePink, _, _].
-
-
+is_score_point(pink, X, Y) :-
+    ScoringPos = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],
+    member((X, Y), ScoringPos), !.
+is_score_point(blue, X, Y) :-
+    ScoringPos = [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)],
+    member((X, Y), ScoringPos), !.
 % Helper to replace a row in the board
 replace_in_board(Board, RowIndex, NewRow, NewBoard) :-
     nth1(RowIndex, Board, _, TempBoard),
     nth1(RowIndex, TempBoard, NewRow, NewBoard).
 
-% Helper to replace a symbol in a square
-replace_in_square([_, TopRight, BottomLeft, BottomRight], 1, Symbol, [Symbol, TopRight, BottomLeft, BottomRight]).
-replace_in_square([TopLeft, _, BottomLeft, BottomRight], 2, Symbol, [TopLeft, Symbol, BottomLeft, BottomRight]).
-replace_in_square([TopLeft, TopRight, _, BottomRight], 3, Symbol, [TopLeft, TopRight, Symbol, BottomRight]).
-replace_in_square([TopLeft, TopRight, BottomLeft, _], 4, Symbol, [TopLeft, TopRight, BottomLeft, Symbol]).
+%clean square
+clean_square(X, Y, Board, TempBoard) :-
+    nth1(Y, Board, Square),!,
+    nth1(SpaceX, Square, ' '),!,
+    getSymbol(SpaceX, X, Symbol), %gets the symbol to replace
+    replace_in_square(Square, X, Symbol, NewSquare),!,
+    replace_in_board(Board, Y, NewSquare, TempBoard).
 
-% Score update for Pink and Blue
+getSymbol(1, X, Symbol) :- nth1(X, [' ', '+', '*', '-'], Symbol), !.
+getSymbol(2, X, Symbol) :- nth1(X, ['*', ' ', '-', '+'], Symbol), !.
+getSymbol(3, X, Symbol) :- nth1(X, ['+', '-', ' ', '*'], Symbol), !.
+getSymbol(4, X, Symbol) :- nth1(X, ['-', '*', '+', ' '], Symbol), !.
+replace_in_square([_, TopRight, BottomLeft, BottomRight], 1, Symbol, [Symbol, TopRight, BottomLeft, BottomRight]), !.
+replace_in_square([TopLeft, _, BottomLeft, BottomRight], 2, Symbol, [TopLeft, Symbol, BottomLeft, BottomRight]), !.
+replace_in_square([TopLeft, TopRight, _, BottomRight], 3, Symbol, [TopLeft, TopRight, Symbol, BottomRight]), !.
+replace_in_square([TopLeft, TopRight, BottomLeft, _], 4, Symbol, [TopLeft, TopRight, BottomLeft, Symbol]), !.
 
-score_update(pink, _, Y, ScoreBlue, ScorePink, NewScoreBlue, NewScorePink, FinalBoard, FinalRestoredBoard) :-
-    Y >= 0, Y =< 3,  
-    NewScorePink is ScorePink + 1,
-    nth1(Y, FinalBoard, Square),
-    find_empty_spot(Square, EmptyIndex),
-    restore_symbol(Square, EmptyIndex, RestoredSquare),
-    replace_in_board(FinalBoard, Y, RestoredSquare, FinalRestoredBoard).
-
-score_update(blue, X, Y, ScoreBlue, ScorePink, NewScoreBlue, ScorePink, FinalBoard, FinalRestoredBoard) :-
-    Y >= 12, Y =< 15, X = 4,  
-    NewScoreBlue is ScoreBlue + 1,
-    nth1(Y, FinalBoard, Square),
-    find_empty_spot(Square, EmptyIndex),
-    restore_symbol(Square, EmptyIndex, RestoredSquare),
-    replace_in_board(FinalBoard, Y, RestoredSquare, FinalRestoredBoard).
-score_update(_, _, _, ScoreBlue, ScorePink, ScoreBlue, ScorePink, FinalBoard, FinalBoard). % No score change if no goal reached
 
 display_game(GameState) :- 
     print_board(GameState).
@@ -248,6 +233,6 @@ call_choose_and_move(N, GameState, FinalGameState) :-
     choose_move(GameState, _, (NewX, NewY), PieceGameState),
     format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
     write('Preparing to enter move :)\n'),
-    move(Pawn_Symbol, Old_X, Old_Y, NewX, NewY, PieceGameState, MovedGameState),
+    move(PieceGameState,(NewX, NewY), MovedGameState),
     N1 is N - 1,
     call_choose_and_move(N1, MovedGameState, FinalGameState).

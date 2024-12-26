@@ -23,11 +23,11 @@ process_spin_input(_Input, _Board, _NewBoard, Success) :-
     Success = 0.
 %returns piece and its xy
 choose_moving_piece(GameState, NewGameState, Piece, (X, Y)) :-
-    [_, _, _, Player, _, _, WB, WP] = GameState,
+    [Board, _, _, Player, _, _, _, WB, WP] = GameState,
     NeWB = WB, NeWP = WP,
     choose_moving_piece(Player, WB, WP, NeWB, NeWP, Piece),
-    getXY(Piece, X, Y, GameState),
-    replace_waiting_pieces(GameState, NeWB, NeWP, NewGameState).
+    getXY(Piece, X, Y, Board),
+    replace_current_piece_waiting_pieces(GameState, NeWB, NeWP, Piece, NewGameState).
 
 choose_moving_piece(pink, _, WP, _, NeWP, Piece) :-
     possible_pieces_pink(Pieces, WP),
@@ -64,11 +64,10 @@ getPiece(pink, Input, Piece) :-
 getPiece(blue, Input, Piece) :-
     Piece is Input + 4.
 
-getXY(Piece, X, Y, GameState) :-
-    [Board | _] = GameState,
+getXY(Piece, X, Y, Board) :-
     nth1(X, Board, Row),
     nth1(Y, Row, Piece).
-getXY(_Piece, X, Y, _GS) :-
+getXY(_Piece, X, Y, _B) :-
     X = 0, Y = 0.
 
 validate_piece_input(Input, Pieces, Success):-
@@ -136,7 +135,12 @@ validate_move_input(Input, Col, Row) :-
     char_code(RowChar, Code),
     Row is Code - 48.
 
-replace_waiting_pieces([Board, Mode, Dif, Player, CSb, CSp, _, _], NeWB, NeWP, 
-                       [Board, Mode, Dif, Player, CSb, CSp, NeWB, NeWP]).
-replace_board([_, Mode, Dif, Player, CSb, CSp, WB, WP], NewBoard, 
-                       [NewBoard, Mode, Dif, Player, CSb, CSp, WB, WP]).
+replace_current_piece_waiting_pieces([Board, Mode, Dif, Player, _, CSb, CSp, _, _], NeWB, NeWP, Piece,
+                       [Board, Mode, Dif, Player, Piece, CSb, CSp, NeWB, NeWP]).
+replace_board([_, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP], NewBoard, 
+                       [NewBoard, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP]).
+increase_score([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP], NewScore, [Board, Mode, Dif, pink, CurrentPiece, CSb, NewScore, WB, WP]) :-
+    NewScore is CSp + 1.
+
+increase_score([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP], NewScore, [Board, Mode, Dif, blue, CurrentPiece, NewScore, CSp, WB, WP]) :-
+    NewScore is CSb + 1.
