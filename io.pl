@@ -24,12 +24,11 @@ process_spin_input(_Input, _Board, _NewBoard, Success) :-
 %returns piece and its xy
 choose_moving_piece(GameState, NewGameState, Piece, (X, Y)) :-
     [Board, _, _, Player, _, _, _, WB, WP] = GameState,
-    NeWB = WB, NeWP = WP,
-    choose_moving_piece(Player, WB, WP, NeWB, NeWP, Piece),
+    choose_moving_piece(Player, WB, WP, NewW, Piece),
     getXY(Piece, X, Y, Board),
-    replace_current_piece_waiting_pieces(GameState, NeWB, NeWP, Piece, NewGameState).
+    replace_current_piece_waiting_pieces(GameState, NewW, Piece, NewGameState).
 
-choose_moving_piece(pink, _, WP, _, NeWP, Piece) :-
+choose_moving_piece(pink, _, WP, NewW, Piece) :-
     possible_pieces_pink(Pieces, WP),
     repeat,
     write('What piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
@@ -37,10 +36,10 @@ choose_moving_piece(pink, _, WP, _, NeWP, Piece) :-
     read(Input),
     validate_piece_input(Input, Pieces, Success),
     Success == 1, 
-    updateWaiting(Input, WP, NeWP), !,
+    updateWaiting(Input, WP, NewW), !,
     getPiece(pink, Input, Piece), !.
 
-choose_moving_piece(blue, WB, _, NeWB, _, Piece) :-
+choose_moving_piece(blue, WB, _, NewW, Piece) :-
     possible_pieces_blue(Pieces, WB),
     repeat,
     write('What piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\n You can choose from '),
@@ -48,11 +47,12 @@ choose_moving_piece(blue, WB, _, NeWB, _, Piece) :-
     read(Input),
     validate_piece_input(Input, Pieces, Success),
     Success == 1,
-    updateWaiting(Input, WB, NeWB), !, 
+    updateWaiting(Input, WB, NewW), 
     getPiece(blue, Input, Piece), !.
 
-updateWaiting(Input, Input, NeW) :- NeW is Input - 1, !.
-updateWaiting(_, _, _).
+updateWaiting(Input, Input, NewW) :- 
+    NewW is Input - 1, !.
+updateWaiting(_, W, NewW) :- NewW = W, !.
 
 possible_pieces_blue(ListOfPieces, WB) :-
     findall(X, (between(WB, 5, X)), ListOfPieces).
@@ -135,12 +135,13 @@ validate_move_input(Input, Col, Row) :-
     char_code(RowChar, Code),
     Row is Code - 48.
 
-replace_current_piece_waiting_pieces([Board, Mode, Dif, Player, _, CSb, CSp, _, _], NeWB, NeWP, Piece,
-                       [Board, Mode, Dif, Player, Piece, CSb, CSp, NeWB, NeWP]).
+replace_current_piece_waiting_pieces([Board, Mode, Dif, pink, _, CSb, CSp, WB, _], NewW, Piece,
+                       [Board, Mode, Dif, pink, Piece, CSb, CSp, WB, NewW]).
+replace_current_piece_waiting_pieces([Board, Mode, Dif, blue, _, CSb, CSp, _, WP], NewW, Piece,
+                       [Board, Mode, Dif, blue, Piece, CSb, CSp, NewW, WP]).
 replace_board([_, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP], NewBoard, 
                        [NewBoard, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP]).
 increase_score([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP], NewScore, [Board, Mode, Dif, pink, CurrentPiece, CSb, NewScore, WB, WP]) :-
     NewScore is CSp + 1.
-
 increase_score([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP], NewScore, [Board, Mode, Dif, blue, CurrentPiece, NewScore, CSp, WB, WP]) :-
     NewScore is CSb + 1.
