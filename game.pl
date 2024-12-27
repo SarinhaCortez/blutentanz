@@ -6,8 +6,6 @@ TRY TO WRITE CODE THAT ‘LOOKS DECLARATIVE’ AND AVOID USING ‘IMPERATIVE-LOO
 CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE 
 (E.G., USING TAIL RECURSION WHEN POSSIBLE).*/
 
-% play/0 must be in the game.pl file and must give access to the game menu, which allows configuring the game type (H/H, H/PC, PC/H, or PC/PC), difficulty level(s) to be used by the artificial player(s), among other possible parameters, and start the game cycle.
-
 /*initial_state(+GameConfig, -GameState).
 %This predicate receives a desired game configuration
 %and returns the corresponding initial game state. Game 
@@ -35,37 +33,36 @@ returns the new game state after the move is executed.*/
 
 valid_moves_piece(0, 0, blue, Board, Moves) :-
     PossibleMoves = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],
-    include(valid_move(blue, Board), PossibleMoves, Moves).
+    include(is_valid_move(blue, Board), PossibleMoves, Moves).
 valid_moves_piece(0, 0, pink, Board, Moves) :-
     PossibleMoves = [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)],
-    include(valid_move(pink, Board), PossibleMoves, Moves).
+    include(is_valid_move(pink, Board), PossibleMoves, Moves).
 valid_moves_piece(1, Y, Player, Board, Moves) :-
     findall((X, ResY), 
             (member((X, ExprY), [(2, Y-1), (2, Y), (3, Y-4), (3, Y)]), 
             ResY is ExprY),
             PossibleMoves),
-    include(valid_move(Player, Board), PossibleMoves, Moves).
+    include(is_valid_move(Player, Board), PossibleMoves, Moves).
 valid_moves_piece(2, Y, Player, Board, Moves) :-
     findall((X, ResY), 
             (member((X, ExprY), [(1, Y+1), (1, Y), (4, Y-4), (4, Y)]), 
             ResY is ExprY),
             PossibleMoves),
-    include(valid_move(Player, Board), PossibleMoves, Moves).
+    include(is_valid_move(Player, Board), PossibleMoves, Moves).
 valid_moves_piece(3, Y, Player, Board, Moves) :-
     findall((X, ResY), 
             (member((X, ExprY), [(1, Y), (4, Y), (4, Y-1), (1, Y+4)]), 
             ResY is ExprY),
             PossibleMoves),
-    include(valid_move(Player, Board), PossibleMoves, Moves).
+    include(is_valid_move(Player, Board), PossibleMoves, Moves).
 valid_moves_piece(4, Y, Player, Board, Moves) :-
     findall((X, ResY), 
             (member((X, ExprY), [(2, Y+4), (3, Y), (2, Y), (3, Y+1)]), 
             ResY is ExprY),
             PossibleMoves),
-    include(valid_move(Player, Board), PossibleMoves, Moves).
-%(1, 2) -> (3, 2) mas (4, 1)
-% Check if a move is valid based on the player and the character in the position
-valid_move(Player, Board, (X, Y)) :-
+    include(is_valid_move(Player, Board), PossibleMoves, Moves).
+
+is_valid_move(Player, Board, (X, Y)) :-
     length(Board, Length),
     Y > 0, Y =< Length,
     nth1(Y, Board, Row),
@@ -77,10 +74,20 @@ can_move_to(blue, '*') :- !.
 can_move_to(_, '-') :- !.
 can_move_to(pink, '+') :- !.
 
-valid_moves(GameState, ListOfMoves).
+piece_values(pink, N) :- between(0, 4, N).
+piece_values(blue, N) :- between(0, 9, N).
+%This predicate receives the current game state, and returns a list of all possible valid moves.
+get_piece_coordinates(GameState, PieceCoordinates) :-
+    [Board, _, _, Player | _] = GameState,
+    findall((X, Y), (piece_values(Player, Piece), getXY(Piece, X, Y, Board)), PieceCoordinates).
 
-/*valid_moves(+GameState, -ListOfMoves).This predicate receives the current game state,
-and returns a list of all possible valid moves.*/
+valid_moves(GameState, ListOfMoves) :-
+    get_piece_coordinates(GameState, PieceCoordinates),
+    [Board, _, _, Player | _] = GameState,
+    findall(Moves, (member((XPiece, YPiece), PieceCoordinates), valid_moves_piece(XPiece, YPiece, Player, Board, Moves)), ListOfListsofMoves),
+    append(ListOfListsofMoves, ListOfMoves).
+
+
 
 play :-
     blutentanz,
@@ -116,7 +123,29 @@ show_winner(Winner) :-
     write(" won!"),
     nl.    
 
-value(GameState, Player, Value). 
+getScore(pink, Score) :- 
+    [_, _, _, _, _, _, CSp | _] = GameState,
+    Score = CSp.
+getScore(blue, Score) :- 
+    [_, _, _, _, _, CSb | _] = GameState,
+    Score = CSb.
+valid_coordinate((X, Y)) :-
+    (X, Y) \= (0, 0),
+    (X, Y) \= (1000, 1000).
+
+% Predicate to count the number of valid tuples
+intheboard(PieceCoordinates, Count) :-
+    exclude(valid_coordinate, PieceCoordinates, ValidCoordinates),
+    length(ValidCoordinates, Count).
+
+
+value(GameState, Player, Value) :-
+    [Board, _, _, Player, _, CSb, CSp, WB, WP] = GameState,
+    getScore(Plyer, Score), !,
+    get_piece_coordinates(GameState, PieceCoordinates).
+    
+
+
 /*value(+GameState, +Player, -Value). This predicate receives the current game state and returns a value measuring how
  good/bad the current game state is to the given Player.*/
 
@@ -275,3 +304,4 @@ call_construct_and_move(N, GameState, FinalGameState) :-
     display_game(MovedGameState),
     N1 is N - 1,
     call_construct_and_move(N1, MovedGameState, FinalGameState).
+
