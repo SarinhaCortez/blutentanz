@@ -128,12 +128,12 @@ the game state as determined by the value/3 predicate. For human players, it sho
  interact with the user to read the move.*/
 % input_move is now choose move in order to follow the conventions
 choose_move(GameState, 1, (Square, PlaceInSquare)) :-%internally, square is y and place x
-    [Board |_] = GameState,
-    repeat,
-    write('What square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
+    [Board, _,_,Player |_] = GameState,
+    repeat, format_color(Player),
+    write(', what square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(SqInput), 
-    nl, %tirei o repeat, não fazia sentido
-    write('What symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
+    nl,format_color(Player),
+    write(', what symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(Symbol), nl,
     get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success), %square is col n
     format('sqinput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
@@ -145,7 +145,7 @@ construct_move(GameState, Move, PieceGameState) :-
     Move = (X, Y),
     [Board, 1 | _] = GameState,
     repeat,
-    choose_moving_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
+    choose_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
     format('Moving piece: ~w~n', Piece),
     [_, 1, _, Player | _ ] = PieceGameState,
     choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
@@ -170,7 +170,7 @@ game_loop(GameState):-
     display_game(GameState),
     choose_spin(GameState, SpunGameState),
     display_game(SpunGameState),
-    call_choose_and_move(3, SpunGameState, FinalGameState), !,
+    call_construct_and_move(3, SpunGameState, FinalGameState), !,
     print(FinalGameState),nl,
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
@@ -268,7 +268,7 @@ call_construct_and_move(0, GameState, GameState) :- !.
 call_construct_and_move(N, GameState, FinalGameState) :-
     N > 0,
     repeat,
-    construct_move(GameState, _, (NewX, NewY), PieceGameState),
+    construct_move(GameState, (NewX, NewY), PieceGameState),
     format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
     move(PieceGameState,(NewX, NewY), MovedGameState),
     write('Exited move successfuly!'),

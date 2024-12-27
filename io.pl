@@ -2,9 +2,9 @@
 :- consult(redefs).
 
 choose_spin(GameState, NewGameState) :-
-    [Board, _, _, _|_] = GameState,
-    repeat,
-    write('Choose a row (1-4) or column (A-D) to spin (Input your choice, then press ENTER, . ,ENTER): '),
+    [Board, _, _, Player|_] = GameState,
+    repeat,format_color(Player),
+    write(', choose a row (1-4) or column (A-D) to spin (Input your choice, then press ENTER, . ,ENTER): '),
     read(Input),
     process_spin_input(Input, Board, NewBoard, Success),
     Success == 1, replace_board(GameState, NewBoard, NewGameState), !.
@@ -22,17 +22,17 @@ process_spin_input(_Input, _Board, _NewBoard, Success) :-
     write('Invalid input. Please choose a row (1-4) or column (A-D)\n'),
     Success = 0.
 %returns piece and its xy
-choose_moving_piece(GameState, NewGameState, Piece, (X, Y)) :-
+choose_piece(GameState, NewGameState, Piece, (X, Y)) :-
     [Board, _, _, Player, _, _, _, WB, WP] = GameState,
-    choose_moving_piece(Player, WB, WP, NewW, Piece),
+    choose_piece(Player, WB, WP, NewW, Piece),
     getXY(Piece, X, Y, Board),
     format('Piece is in x: ~w, y: ~w\n', [X, Y]),
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, NewGameState).
 
-choose_moving_piece(pink, _, WP, NewW, Piece) :-
+choose_piece(pink, _, WP, NewW, Piece) :-
     possible_pieces_pink(Pieces, WP),
-    repeat,
-    write('What piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
+    repeat, format_color(pink),
+    write(', what piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
     print(Pieces),
     read(Input),
     validate_piece_input(Input, Pieces, Success),
@@ -40,10 +40,10 @@ choose_moving_piece(pink, _, WP, NewW, Piece) :-
     updateWaiting(Input, WP, NewW), !,
     getPiece(pink, Input, Piece), !.
 
-choose_moving_piece(blue, WB, _, NewW, Piece) :-
+choose_piece(blue, WB, _, NewW, Piece) :-
     possible_pieces_blue(Pieces, WB),
-    repeat,
-    write('What piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\n You can choose from '),
+    repeat, format_color(blue),
+    write(', what piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\n You can choose from '),
     print(Pieces),
     read(Input),
     validate_piece_input(Input, Pieces, Success),
@@ -52,6 +52,7 @@ choose_moving_piece(blue, WB, _, NewW, Piece) :-
     getPiece(blue, Input, Piece), !.
 
 updateWaiting(Input, Input, NewW) :- 
+    Input > 0,
     NewW is Input - 1, !.
 updateWaiting(_, W, NewW) :- NewW = W, !.
 
