@@ -1,4 +1,4 @@
-:- consult(board).
+
 :- consult(io).
 
 /*USE MEANINGFUL NAMES FOR PREDICATES AND ARGUMENTS. 
@@ -6,17 +6,9 @@ TRY TO WRITE CODE THAT ‘LOOKS DECLARATIVE’ AND AVOID USING ‘IMPERATIVE-LOO
 CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE 
 (E.G., USING TAIL RECURSION WHEN POSSIBLE).
 
-/*display_game(+GameState). This predicate receives the current 
-game state (including the player who will make the next move) and prints the game 
-state to the terminal. Appealing and intuitive visualizations will be valued. 
-Flexible game state representations and visualization predicates will also be 
-valued, for instance those that work with any board size. FOR UNIFORMIZATION 
+/*d FOR UNIFORMIZATION 
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
 
-
-/*move(+GameState,+Move,-NewGameState).This predicate is responsible for move validation and execution, receiving 
-the current game state and the move to be executed, and (if the move is valid) 
-returns the new game state after the move is executed.*/
 
 valid_moves_piece(0, 0, blue, Board, Moves) :-
     PossibleMoves = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],
@@ -48,31 +40,6 @@ valid_moves_piece(4, Y, Player, Board, Moves) :-
             ResY is ExprY),
             PossibleMoves),
     include(is_valid_move(Player, Board), PossibleMoves, Moves).
-
-is_valid_move(Player, Board, (X, Y)) :-
-    length(Board, Length),
-    Y > 0, Y =< Length,
-    nth1(Y, Board, Row),
-    nth1(X, Row, Char),
-    can_move_to(Player, Char), !.
-
-% Define the rules for moving to a place with a specific character
-can_move_to(blue, '*') :- !.
-can_move_to(_, '-') :- !.
-can_move_to(pink, '+') :- !.
-
-piece_values(pink, N) :- between(0, 4, N).
-piece_values(blue, N) :- between(0, 9, N).
-%This predicate receives the current game state, and returns a list of all possible valid moves.
-get_piece_coordinates(GameState, PieceCoordinates) :-
-    [Board, _, _, Player | _] = GameState,
-    findall((X, Y), (piece_values(Player, Piece), getXY(Piece, X, Y, Board)), PieceCoordinates).
-/*
-valid_moves(GameState, ListOfMoves) :-
-    get_piece_coordinates(GameState, PieceCoordinates),
-    [Board, _, _, Player | _] = GameState,
-    findall(Moves, (member((XPiece, YPiece), PieceCoordinates), valid_moves_piece(XPiece, YPiece, Player, Board, Moves)), ListOfListsofMoves),
-    append(ListOfListsofMoves, ListOfMoves).*/
 
 valid_moves(GameState, ListOfMoves) :-
     get_piece_coordinates(GameState, PieceCoordinates),
@@ -113,19 +80,6 @@ show_winner(Winner) :-
     format_color(Winner),
     write(" won!"),
     nl.
-
-unpack_coordinates([], [], []).
-unpack_coordinates([(X, Y) | Rest], [X | Xs], [Y | Ys]) :-
-    unpack_coordinates(Rest, Xs, Ys).
-getScore(pink, GameState, Score) :- 
-    [_, _, _, _, _, _, CSp | _] = GameState,
-    Score = CSp.
-getScore(blue, GameState, Score) :- 
-    [_, _, _, _, _, CSb | _] = GameState,
-    Score = CSb.
-
-valid_coordinate((X, Y)) :-
-    (X, Y) \= (0, 0).
 
 %choosing heuristic
 rotation_value(GameState, SortedResult) :-
@@ -252,10 +206,9 @@ on_board(PieceCoordinates, Count) :-
     exclude(valid_coordinate, PieceCoordinates, ValidCoordinates),
     length(ValidCoordinates, Count).
 value(GameState, Player, Value) :-
-    [_, _, _, Player | _] = GameState,
-    getScore(Player, GameState, PlScore), !,
+    get_score(Player, GameState, PlScore), !,
     Opponent = opponent(Player),
-    getScore(Opponent, OpoScore), !,
+    get_score(Opponent, OpoScore), !,
     rotation_value(GameState, Result),
     average_benefit_for_player_and_opponent(Result, AvgPlayerBenefit, AvgOpponentBenefit),
     count_moves_for_player_and_opponent(Result, TotalPlayerMoves, TotalOpponentMoves),
@@ -267,16 +220,6 @@ value(GameState, Player, Value) :-
     NumValue is 0.6 * RotationVal + 0.4 * ScoreWeight,
     (NumValue >= 0 -> Value = good ; Value = bad).
 
-
-/*value(+GameState, +Player, -Value). This predicate receives the current game state and returns a value measuring how
- good/bad the current game state is to the given Player.*/
-
-
-/*choose_move(+GameState, +Level, -Move).This predicate receives the current game state and returns the move chosen by the
-computer player. Level 1 should return a random valid move. Level 2 should return 
-the best play at the time (using a greedy algorithm), considering the evaluation of
-the game state as determined by the value/3 predicate. For human players, it should
- interact with the user to read the move.*/
 % input_move is now choose move in order to follow the conventions
 choose_move(GameState, 1, (Square, PlaceInSquare)) :-%internally, square is y and place x
     [Board, _,_,Player |_] = GameState,
@@ -327,15 +270,13 @@ game_loop(GameState):-
     game_loop(OtherPlayerGameState).
 
 
-switch_turn([Board, Mode, Dif, pink, _, CSb, CSp, WB, WP], [Board, Mode, Dif, blue, -1, CSb, CSp, WB, WP]).
-switch_turn([Board, Mode, Dif, blue, _, CSb, CSp, WB, WP], [Board, Mode, Dif, pink, -1, CSb, CSp, WB, WP]).
 clear_data :-
     retractall(board(_)).
 
 move(GameState, Move, NewGameState) :-
     Move = (X, Y),
     [Board, _, _, _, CurrPiece | _] = GameState,
-    getXY(CurrPiece, Old_X, Old_Y, Board),!,
+    get_x_y(CurrPiece, Old_X, Old_Y, Board),!,
     clean_square(Old_X, Old_Y, Board, TempBoard),!,
     nth1(Y, TempBoard, Square), !,
     replace_in_square(Square, X, CurrPiece, NewSquare), !,
@@ -343,72 +284,9 @@ move(GameState, Move, NewGameState) :-
     replace_board(GameState, NewBoard, TempState), 
     update_score(TempState, X, Y, NewGameState), !.
 
-update_score(GameState, X, Y, NewGameState) :-
-    [Board,_,_,Player |_] = GameState,
-    is_score_point(Player, X, Y), !,
-    clean_square(X, Y, Board, TempBoard),
-    format_color(Player), write('You won a score point!\n'),
-    replace_board(GameState, TempBoard, TempGameState), !,
-    increase_score(TempGameState, NewGameState).
-update_score(GameState, _, _, NewGameState) :- 
-    NewGameState = GameState.
-is_score_point(pink, X, Y) :-
-    ScoringPos = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],
-    member((X, Y), ScoringPos), !.
-is_score_point(blue, X, Y) :-
-    ScoringPos = [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)],
-    member((X, Y), ScoringPos), !.
-
-% Helper to replace a row in the board
-replace_in_board(Board, RowIndex, NewRow, NewBoard) :-
-    same_length(Board, NewBoard),
-    replace_row(Board, RowIndex, NewRow, NewBoard).
-replace_row([_|Rest], 1, NewRow, [NewRow|Rest]). % Replace the first row when RowIndex is 1
-replace_row([Row|Rest], RowIndex, NewRow, [Row|NewRest]) :-
-    RowIndex > 1,
-    NextIndex is RowIndex - 1,
-    replace_row(Rest, NextIndex, NewRow, NewRest).
-
-clean_square(0, 0, Board, TempBoard) :- 
-    write('Your piece is just starting!\n'), 
-    TempBoard = Board, !.
-%clean square
-clean_square(X, Y, Board, TempBoard) :-
-    X>0, Y > 0,
-    nth1(Y, Board, Square),!,
-    nth1(SpaceX, Square, ' '),!,
-    getSymbol(SpaceX, X, Symbol), %gets the symbol to replace
-    replace_in_square(Square, X, Symbol, NewSquare),!,
-    replace_in_board(Board, Y, NewSquare, TempBoard).
-
-getSymbol(1, X, Symbol) :- nth1(X, [' ', '+', '*', '-'], Symbol), !.
-getSymbol(2, X, Symbol) :- nth1(X, ['*', ' ', '-', '+'], Symbol), !.
-getSymbol(3, X, Symbol) :- nth1(X, ['+', '-', ' ', '*'], Symbol), !.
-getSymbol(4, X, Symbol) :- nth1(X, ['-', '*', '+', ' '], Symbol), !.
-replace_in_square([_, TopRight, BottomLeft, BottomRight], 1, Symbol, [Symbol, TopRight, BottomLeft, BottomRight]) :- !.
-replace_in_square([TopLeft, _, BottomLeft, BottomRight], 2, Symbol, [TopLeft, Symbol, BottomLeft, BottomRight]):- !.
-replace_in_square([TopLeft, TopRight, _, BottomRight], 3, Symbol, [TopLeft, TopRight, Symbol, BottomRight]):-  !.
-replace_in_square([TopLeft, TopRight, BottomLeft, _], 4, Symbol, [TopLeft, TopRight, BottomLeft, Symbol]):-  !.
-
 
 display_game(GameState) :- 
     print_board(GameState).
-
-% configuration(-GameState)
-% Init GameState with Board, first Player, empty FearList and TotalMoves
-/*
-configurations([Board,Player,[],0]):-
-    barca,
-    set_mode,
-    init_random_state,
-    choose_player(Player),
-    choose_board(Size), 
-    init_state(Size, Board).*/
-
-% Example condition predicate (can be customized)
-
-
-% Main predicate calling construct_move/3 three times
 
 /*
 should_stop(N).

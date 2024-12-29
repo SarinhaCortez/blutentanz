@@ -1,5 +1,4 @@
 :- consult(board).
-:- consult(redefs).
 
 choose_spin(GameState, NewGameState) :-
     [Board, 1, _, Player|_] = GameState,
@@ -8,15 +7,6 @@ choose_spin(GameState, NewGameState) :-
     read(Input),
     process_spin_input(Input, Board, NewBoard, Success),
     Success == 1, replace_board(GameState, NewBoard, NewGameState), !.
-/* idea
-choose_spin(GameState, NewGameState) :-
-    [Board, Mode, _, Player|_] = GameState,
-    Mode/=1,
-    repeat, format_color(Player),
-    write('is choosing a row (1-4) or column (A-D) to spin.'),
-    process_spin_input(Input, Board, NewBoard, Success),
-    Success == 1, replace_board(GameState, NewBoard, NewGameState), !.
-*/
 process_spin_input(Input, Board, NewBoard, Success):- 
     member(Input, [1, 2, 3, 4]), !,
     spin_row(Input, Board, NewBoard),
@@ -33,58 +23,31 @@ process_spin_input(_Input, _Board, _NewBoard, Success) :-
 choose_piece(GameState, NewGameState, Piece, (X, Y)) :-
     [Board, _, _, Player, _, _, _, WB, WP] = GameState,
     choose_piece(Player, WB, WP, NewW, Piece),
-    getXY(Piece, X, Y, Board),
+    get_x_y(Piece, X, Y, Board),
     format('Piece is in x: ~w, y: ~w\n', [X, Y]),
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, NewGameState).
 
 choose_piece(pink, _, WP, NewW, Piece) :-
-    possible_pieces_pink(Pieces, WP),
+    get_available_pieces(Pieces, pink, WP),
     repeat, format_color(pink),
     write(', what piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
     print(Pieces),
     read(Input),
     validate_piece_input(Input, Pieces, Success),
     Success == 1, 
-    updateWaiting(Input, WP, NewW), !,
-    getPiece(pink, Input, Piece), !.
+    update_waiting_pieces(Input, WP, NewW), !,
+    get_piece(pink, Input, Piece), !.
 
 choose_piece(blue, WB, _, NewW, Piece) :-
-    possible_pieces_blue(Pieces, WB),
+    get_available_pieces(Pieces, blue, WB),
     repeat, format_color(blue),
     write(', what piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\n You can choose from '),
     print(Pieces),
     read(Input),
     validate_piece_input(Input, Pieces, Success),
     Success == 1,
-    updateWaiting(Input, WB, NewW), 
-    getPiece(blue, Input, Piece), !.
-
-updateWaiting(Input, Input, NewW) :- 
-    Input > 0,
-    NewW is Input - 1, !.
-updateWaiting(_, W, NewW) :- NewW = W, !.
-
-possible_pieces_blue(ListOfPieces, WB) :-
-    findall(X, (between(WB, 5, X)), ListOfPieces).
-possible_pieces_pink(ListOfPieces, WP) :-
-    findall(X, (between(WP, 5, X)), ListOfPieces).
-
-getPiece(pink, Input, Piece) :-
-    Piece is Input - 1.
-getPiece(blue, Input, Piece) :-
-    Piece is Input + 4.
-
-getXY(Piece, X, Y, Board) :-
-    nth1(Y, Board, Row),
-    nth1(X, Row, Piece).
-getXY(_Piece, X, Y, _B) :-
-    X = 0, Y = 0.
-
-validate_piece_input(Input, Pieces, Success):-
-    member(Input, Pieces),!, Success = 1.
-
-validate_piece_input(_Input, _Pieces, Success) :-
-    Success = 0.
+    update_waiting_pieces(Input, WB, NewW), 
+    get_piece(blue, Input, Piece), !.
 
 choose_difficulty(1, Dif) :- Dif = 1.
 choose_difficulty(_, Dif) :-
@@ -108,38 +71,3 @@ choose_start_player(StartPlayer) :-
     between(1, 2, Input), !,
     player_n(Input, StartPlayer).
 
-player_n(1, Color) :- Color = blue.
-player_n(2, Color) :- Color = pink.
-
-
-% Get the index of the square in the board 
-get_square_index(Board, Input, Symbol, SquareY, PlaceInSquare, Success) :-
-    validate_move_input(Input, ColVisual, RowVisual), !,
-    write('Input passed Validation.\n'), 
-    SquareY is (RowVisual - 1) * 4 + ColVisual, !,
-    nth1(SquareY, Board, SqContent), !,
-    nth1(PlaceInSquare, SqContent, Symbol), !,
-    Success = 1. 
-get_square_index(_Board, _Input, _Symbol, _SquareY, _PlaceInSquare, Success) :-
-    write('Oops! This position is not available in the square you chose! Try again.\n'),
-    Success = 0.
-
-%input processing
-validate_move_input(Input, Col, Row) :- 
-    atom_chars(Input, [ColChar, RowChar]),
-    member(RowChar, ['1', '2', '3', '4']), !,
-    member(ColChar, ['a', 'b', 'c', 'd', 'A', 'B', 'C', 'D']), !,
-    column_index(ColChar, Col), !, 
-    char_code(RowChar, Code),
-    Row is Code - 48.
-
-replace_current_piece_waiting_pieces([Board, Mode, Dif, pink, _, CSb, CSp, WB, _], NewW, Piece,
-                       [Board, Mode, Dif, pink, Piece, CSb, CSp, WB, NewW]).
-replace_current_piece_waiting_pieces([Board, Mode, Dif, blue, _, CSb, CSp, _, WP], NewW, Piece,
-                       [Board, Mode, Dif, blue, Piece, CSb, CSp, NewW, WP]).
-replace_board([_, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP], NewBoard, 
-                       [NewBoard, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP]).
-increase_score([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP],[Board, Mode, Dif, pink, CurrentPiece, CSb, NewScore, WB, WP]) :-
-    NewScore is CSp + 1.
-increase_score([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP],[Board, Mode, Dif, blue, CurrentPiece, NewScore, CSp, WB, WP]) :-
-    NewScore is CSb + 1.

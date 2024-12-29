@@ -1,7 +1,7 @@
 :- use_module(library(lists)).
 :- use_module(library(random)).
 :- consult(redefs).
-:- consult(colors).
+:- consult(utils).
 
 board([
   ['+', '-', ' ', '*'],
@@ -23,9 +23,6 @@ board([
 ]).
 
 %helpers
-
-opponent(blue) :- pink.
-opponent(pink) :- blue.
 
 shuffle_board(Board, ShuffledBoard) :-
     random_permutation(Board, ShuffledBoard).
@@ -107,46 +104,6 @@ format_square(Square1, Square2, Square3, Square4, N) :-
 
     write('  _______________'), nl.
 
-repeat_format_color(0, _) :- !.
-repeat_format_color(N, Char) :-
-    N > 0,
-    format_color(Char),
-    N1 is N - 1,
-    repeat_format_color(N1, Char).
-
-format_color('*') :- 
-    print_in_color(cyan, '*'), !. 
-format_color('o') :- 
-    print_in_color(cyan, '_'), !.
-format_color('_') :- 
-    print_in_color(b_magenta, '_'), !.
-format_color('+') :- 
-    print_in_color(b_magenta, '+'), !.
-format_color('-') :-
-    print_in_color(black, '-'), !.
-format_color(blue) :-
-     print_in_color(cyan, 'B'),
-     print_in_color(cyan, 'l'), 
-     print_in_color(cyan, 'u'),
-     print_in_color(cyan, 'e'), !. 
-format_color(pink) :-
-     print_in_color(b_magenta, 'P'),
-     print_in_color(b_magenta, 'i'), 
-     print_in_color(b_magenta, 'n'),
-     print_in_color(b_magenta, 'k'), !.
-%print players
-format_color(X) :- 
-    between(0, 4, X), !,
-    X1 is X+1,
-    print_in_color(b_magenta, X1). 
-format_color(X) :- 
-    between(5, 9, X), !,
-    X1 is X-4,
-    print_in_color(cyan, X1).
-
-format_color(X) :- 
-    print_in_color(white, X).      % Default color for any other character
-
 %logic for spinning the squares
 
 spin_square_in_board(Pos, Board, NewBoard) :-
@@ -186,21 +143,4 @@ spin_column_aux(Pos, End, Board, NewBoard) :-
     Pos1 is Pos + 4,
     spin_column_aux(Pos1, End, TempBoard, NewBoard).
 
-blutentanz :-
-    repeat_format_color(22, '+'), nl,
-    repeat_format_color(22, '-'), nl,
-    write('Welcome to Blutentanz!'), nl,
-    repeat_format_color(22, '-'), nl, 
-    repeat_format_color(22, '*'), nl.
 
-column_index('a', 1).
-column_index('b', 2).
-column_index('c', 3).
-column_index('d', 4).
-column_index(A, Col) :- char_code(A, Code), Code >= 65, Code =< 68, Col is Code - 64.
-
-print_turn(GameState) :-
-    [_, _, _, Cp | _] = GameState,
-    format_color(Cp),
-    write(', your turn!'),
-    nl.
