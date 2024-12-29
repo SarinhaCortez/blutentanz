@@ -4,20 +4,7 @@
 /*USE MEANINGFUL NAMES FOR PREDICATES AND ARGUMENTS. 
 TRY TO WRITE CODE THAT ‘LOOKS DECLARATIVE’ AND AVOID USING ‘IMPERATIVE-LOOKING’ 
 CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE 
-(E.G., USING TAIL RECURSION WHEN POSSIBLE).*/
-
-/*initial_state(+GameConfig, -GameState).
-%This predicate receives a desired game configuration
-%and returns the corresponding initial game state. Game 
-%configuration includes the type of each player and 
-%other parameters such as board size, use of optional 
-%rules, player names, or other information to provide 
-%more flexibility to the game. The game state describes 
-%a snapshot of the current game state, including board configuration 
-%(typically using list of lists with different atoms for the different pieces), 
-%identifies the current player (the one playing next), and possibly captured pieces 
-%and/or pieces yet to be played, or any other information that may be required, 
-%depending on the game.*/
+(E.G., USING TAIL RECURSION WHEN POSSIBLE).
 
 /*display_game(+GameState). This predicate receives the current 
 game state (including the player who will make the next move) and prints the game 
@@ -130,28 +117,26 @@ show_winner(Winner) :-
 unpack_coordinates([], [], []).
 unpack_coordinates([(X, Y) | Rest], [X | Xs], [Y | Ys]) :-
     unpack_coordinates(Rest, Xs, Ys).
-getScore(pink, Score) :- 
+getScore(pink, GameState, Score) :- 
     [_, _, _, _, _, _, CSp | _] = GameState,
     Score = CSp.
-getScore(blue, Score) :- 
+getScore(blue, GameState, Score) :- 
     [_, _, _, _, _, CSb | _] = GameState,
     Score = CSb.
 
 valid_coordinate((X, Y)) :-
     (X, Y) \= (0, 0).
 
-%rotation benefits
-rotation_value(GameState, StartState, SortedResult) :-
+%choosing heuristic
+rotation_value(GameState, SortedResult) :-
     [Board, Mod, Dif, Player, Piece, CSB, CSP, WB, WP] = GameState,
     Opponent = opponent(Player),
     [Board, Mod, Dif, Opponent, Piece, CSB, CSP, WB, WP] = OpponentGameState,
     get_piece_coordinates(GameState, PlayerPieceCoordinates),
-    valid_moves(OpponentGameState, PlInitMoves),           
-    get_piece_coordinates(OpponentGameState, OpponentPieceCoordinates),
+    valid_moves(GameState, PlInitMoves),           
     valid_moves(OpponentGameState, OpInitMoves),      
     include(is_score_point(Player), PlInitMoves, PlayerStartScoreMoves),  
-    include(is_score_point(Opponent), OpInitMoves, OpponentStartScoreMoves),
-    StartState = (PlayerStartScoreMoves, OpponentStartScoreMoves),           
+    include(is_score_point(Opponent), OpInitMoves, OpponentStartScoreMoves),    
     unpack_coordinates(PlayerPieceCoordinates, Xs, Ys),      
     list_to_set(Xs, XSet),                             
     list_to_set(Ys, YSet),
@@ -172,7 +157,7 @@ rotation_value(GameState, StartState, SortedResult) :-
          include(is_score_point(Opponent), Moves, OponentScoreMoves)), 
         OponentResults),
     combine_results(PlayerResults, OponentResults, Result),
-    calculate_benefits(Result, PlayerStartScoreMoves, OpponentStartScoreMoves, TotalBenefit),
+    calculate_benefits(Result, PlayerStartScoreMoves, OpponentStartScoreMoves),
     sort_by_benefit(Result, SortedResult).
 sort_by_benefit(Result, SortedResult) :-
     findall(
@@ -198,33 +183,90 @@ compare_rotation_benefits(CurrScoreMoves, CurrStartScoreMoves, OponentScoreMoves
     length(OponentStartScoreMoves, OponentStartCount),
     OpponentDelta is OponentScoreCount - OponentStartCount,
     Benefit is PlayerDelta - OpponentDelta.
-calculate_benefits(Result, PlayerStartScoreMoves, OponentStartScoreMoves, TotalBenefit) :-
+calculate_benefits(Result, PlayerStartScoreMoves, OponentStartScoreMoves) :-
     findall(Benefit, 
         (member((Index, Moves, PlayerScoreMoves, OponentScoreMoves), Result), 
          compare_rotation_benefits(PlayerScoreMoves, PlayerStartScoreMoves, 
                                    OponentScoreMoves, OponentStartScoreMoves, 
                                    Benefit)), 
-        Benefits),
-    sum_list(Benefits, TotalBenefit).
+        Benefits).
 combine_results([], [], []).
 combine_results([(Index, Moves, PlayerScoreMoves) | PlayerTail], 
                 [(Index, Moves, OponentScoreMoves) | OpponentTail], 
                 [(Index, Moves, PlayerScoreMoves, OponentScoreMoves) | ResultTail]) :-
     combine_results(PlayerTail, OpponentTail, ResultTail).
 
- 
-
+%global heuristic
+average_benefit_for_player_and_opponent(Result, AvgPlayerBenefit, AvgOpponentBenefit) :-
+    findall(PlayerBenefit,
+        (
+            member((_Index, _Moves, PlayerScoreMoves, OpponentScoreMoves), Result),
+            compare_rotation_benefits(PlayerScoreMoves, [], OpponentScoreMoves, [], PlayerBenefit)
+        ),
+        PlayerBenefits),
+    findall(OpponentBenefit,
+        (
+            member((_Index, _Moves, PlayerScoreMoves, OpponentScoreMoves), Result),
+            compare_rotation_benefits(OpponentScoreMoves, [], PlayerScoreMoves, [], OpponentBenefit)
+        ),
+        OpponentBenefits),
+    sum_list(PlayerBenefits, TotalPlayerBenefit),
+    sum_list(OpponentBenefits, TotalOpponentBenefit),
+    length(PlayerBenefits, Count),
+    AvgPlayerBenefit is TotalPlayerBenefit / Count,
+    AvgOpponentBenefit is TotalOpponentBenefit / Count.
+count_moves_for_player_and_opponent(Result, TotalPlayerMoves, TotalOpponentMoves) :-
+    findall(PlayerMoves,
+        (
+            member((_Index, Moves, PlayerScoreMoves, _OpponentScoreMoves), Result),
+            length(Moves, PlayerMoves)
+        ),
+        PlayerMovesList),
+    findall(OpponentMoves,
+        (
+            member((_Index, Moves, _PlayerScoreMoves, OpponentScoreMoves), Result),
+            length(Moves, OpponentMoves)
+        ),
+        OpponentMovesList),
+    sum_list(PlayerMovesList, TotalPlayerMoves),
+    sum_list(OpponentMovesList, TotalOpponentMoves).
+net_score_opportunities(Result, PlayerScoreDelta, OpponentScoreDelta) :-
+    findall(PlayerScore,
+        (
+            member((_Index, _Moves, PlayerScoreMoves, _OpponentScoreMoves), Result),
+            length(PlayerScoreMoves, PlayerScore)
+        ),
+        PlayerScores),
+    findall(OpponentScore,
+        (
+            member((_Index, _Moves, _PlayerScoreMoves, OpponentScoreMoves), Result),
+            length(OpponentScoreMoves, OpponentScore)
+        ),
+        OpponentScores),
+    sum_list(PlayerScores, TotalPlayerScore),
+    sum_list(OpponentScores, TotalOpponentScore),
+    PlayerScoreDelta is TotalPlayerScore,
+    OpponentScoreDelta is TotalOpponentScore.
 
 on_board(PieceCoordinates, Count) :-
     exclude(valid_coordinate, PieceCoordinates, ValidCoordinates),
     length(ValidCoordinates, Count).
 value(GameState, Player, Value) :-
-    [Board, _, _, Player, _, CSb, CSp, WB, WP] = GameState,
-    getScore(Player, Score), !,
-    get_piece_coordinates(GameState, PieceCoordinates),!, 
-    on_board(PieceCoordinates, Count),
-    rotation_value(GameState, SortedResult),
-    Value is 10*Score - 10*(5-Score) + 2
+    [_, _, _, Player | _] = GameState,
+    getScore(Player, GameState, PlScore), !,
+    Opponent = opponent(Player),
+    getScore(Opponent, OpoScore), !,
+    rotation_value(GameState, Result),
+    average_benefit_for_player_and_opponent(Result, AvgPlayerBenefit, AvgOpponentBenefit),
+    count_moves_for_player_and_opponent(Result, TotalPlayerMoves, TotalOpponentMoves),
+    net_score_opportunities(Result, PlayerScoreDelta, OpponentScoreDelta),
+    RotationVal is (0.5 * (AvgPlayerBenefit - AvgOpponentBenefit)) + 
+                 (0.3 * (TotalPlayerMoves - TotalOpponentMoves)) + 
+                 (0.2 * (PlayerScoreDelta - OpponentScoreDelta)),
+    ScoreWeight is (0.6 * (PlScore - OpoScore)),  
+    NumValue is 0.6 * RotationVal + 0.4 * ScoreWeight,
+    (NumValue >= 0 -> Value = good ; Value = bad).
+
 
 /*value(+GameState, +Player, -Value). This predicate receives the current game state and returns a value measuring how
  good/bad the current game state is to the given Player.*/
