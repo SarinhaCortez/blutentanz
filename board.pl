@@ -23,6 +23,10 @@ board([
 ]).
 
 %helpers
+
+opponent(blue) :- pink.
+opponent(pink) :- blue.
+
 shuffle_board(Board, ShuffledBoard) :-
     random_permutation(Board, ShuffledBoard).
 

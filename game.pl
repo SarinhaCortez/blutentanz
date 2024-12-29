@@ -80,14 +80,18 @@ piece_values(blue, N) :- between(0, 9, N).
 get_piece_coordinates(GameState, PieceCoordinates) :-
     [Board, _, _, Player | _] = GameState,
     findall((X, Y), (piece_values(Player, Piece), getXY(Piece, X, Y, Board)), PieceCoordinates).
+/*
+valid_moves(GameState, ListOfMoves) :-
+    get_piece_coordinates(GameState, PieceCoordinates),
+    [Board, _, _, Player | _] = GameState,
+    findall(Moves, (member((XPiece, YPiece), PieceCoordinates), valid_moves_piece(XPiece, YPiece, Player, Board, Moves)), ListOfListsofMoves),
+    append(ListOfListsofMoves, ListOfMoves).*/
 
 valid_moves(GameState, ListOfMoves) :-
     get_piece_coordinates(GameState, PieceCoordinates),
     [Board, _, _, Player | _] = GameState,
     findall(Moves, (member((XPiece, YPiece), PieceCoordinates), valid_moves_piece(XPiece, YPiece, Player, Board, Moves)), ListOfListsofMoves),
     append(ListOfListsofMoves, ListOfMoves).
-
-
 
 play :-
     blutentanz,
@@ -121,30 +125,106 @@ game_over(GameState, Winner) :-
 show_winner(Winner) :-
     format_color(Winner),
     write(" won!"),
-    nl.    
+    nl.
 
+unpack_coordinates([], [], []).
+unpack_coordinates([(X, Y) | Rest], [X | Xs], [Y | Ys]) :-
+    unpack_coordinates(Rest, Xs, Ys).
 getScore(pink, Score) :- 
     [_, _, _, _, _, _, CSp | _] = GameState,
     Score = CSp.
 getScore(blue, Score) :- 
     [_, _, _, _, _, CSb | _] = GameState,
     Score = CSb.
-valid_coordinate((X, Y)) :-
-    (X, Y) \= (0, 0),
-    (X, Y) \= (1000, 1000).
 
-% Predicate to count the number of valid tuples
-intheboard(PieceCoordinates, Count) :-
+valid_coordinate((X, Y)) :-
+    (X, Y) \= (0, 0).
+
+%rotation benefits
+rotation_value(GameState, StartState, SortedResult) :-
+    [Board, Mod, Dif, Player, Piece, CSB, CSP, WB, WP] = GameState,
+    Opponent = opponent(Player),
+    [Board, Mod, Dif, Opponent, Piece, CSB, CSP, WB, WP] = OpponentGameState,
+    get_piece_coordinates(GameState, PlayerPieceCoordinates),
+    valid_moves(OpponentGameState, PlInitMoves),           
+    get_piece_coordinates(OpponentGameState, OpponentPieceCoordinates),
+    valid_moves(OpponentGameState, OpInitMoves),      
+    include(is_score_point(Player), PlInitMoves, PlayerStartScoreMoves),  
+    include(is_score_point(Opponent), OpInitMoves, OpponentStartScoreMoves),
+    StartState = (PlayerStartScoreMoves, OpponentStartScoreMoves),           
+    unpack_coordinates(PlayerPieceCoordinates, Xs, Ys),      
+    list_to_set(Xs, XSet),                             
+    list_to_set(Ys, YSet),
+    findall((RowIndex, NewBoard), 
+        (member(RowIndex, XSet), spin_row(RowIndex, Board, NewBoard)), SpunRows),
+    findall((ColChar, NewBoard), 
+        (member(ColIndex, YSet), column_index(ColChar, ColIndex), spin_column(ColIndex, Board, NewBoard)), SpunCols),
+    append(SpunRows, SpunCols, AllSpunBoards),
+    findall((Index, ValidMoves), 
+        (member((Index, Board), AllSpunBoards), valid_moves(Board, ValidMoves)), 
+        SpunMoves),
+    findall((Index, Moves, PlayerScoreMoves), 
+        (member((Index, Moves), SpunMoves), 
+         include(is_score_point(Player), Moves, PlayerScoreMoves)), 
+        PlayerResults),
+    findall((Index, Moves, OponentScoreMoves), 
+        (member((Index, Moves), SpunMoves), 
+         include(is_score_point(Opponent), Moves, OponentScoreMoves)), 
+        OponentResults),
+    combine_results(PlayerResults, OponentResults, Result),
+    calculate_benefits(Result, PlayerStartScoreMoves, OpponentStartScoreMoves, TotalBenefit),
+    sort_by_benefit(Result, SortedResult).
+sort_by_benefit(Result, SortedResult) :-
+    findall(
+        (Benefit, MoveLength, Index, Moves),
+        (
+            member((Index, Moves, PlayerScoreMoves, OponentScoreMoves), Result),
+            compare_rotation_benefits(PlayerScoreMoves, [], OponentScoreMoves, [], Benefit),
+            length(Moves, MoveLength)
+        ),
+        ResultsWithKeys
+    ),
+    sort(0, @>=, ResultsWithKeys, SortedResultsWithKeys),
+    findall(
+        (Index, Moves),
+        member((_Benefit, _MoveLength, Index, Moves), SortedResultsWithKeys),
+        SortedResult
+    ).
+compare_rotation_benefits(CurrScoreMoves, CurrStartScoreMoves, OponentScoreMoves, OponentStartScoreMoves, Benefit) :-
+    length(CurrScoreMoves, CurrScoreCount),
+    length(CurrStartScoreMoves, CurrStartCount),
+    PlayerDelta is CurrScoreCount - CurrStartCount,
+    length(OponentScoreMoves, OponentScoreCount),
+    length(OponentStartScoreMoves, OponentStartCount),
+    OpponentDelta is OponentScoreCount - OponentStartCount,
+    Benefit is PlayerDelta - OpponentDelta.
+calculate_benefits(Result, PlayerStartScoreMoves, OponentStartScoreMoves, TotalBenefit) :-
+    findall(Benefit, 
+        (member((Index, Moves, PlayerScoreMoves, OponentScoreMoves), Result), 
+         compare_rotation_benefits(PlayerScoreMoves, PlayerStartScoreMoves, 
+                                   OponentScoreMoves, OponentStartScoreMoves, 
+                                   Benefit)), 
+        Benefits),
+    sum_list(Benefits, TotalBenefit).
+combine_results([], [], []).
+combine_results([(Index, Moves, PlayerScoreMoves) | PlayerTail], 
+                [(Index, Moves, OponentScoreMoves) | OpponentTail], 
+                [(Index, Moves, PlayerScoreMoves, OponentScoreMoves) | ResultTail]) :-
+    combine_results(PlayerTail, OpponentTail, ResultTail).
+
+ 
+
+
+on_board(PieceCoordinates, Count) :-
     exclude(valid_coordinate, PieceCoordinates, ValidCoordinates),
     length(ValidCoordinates, Count).
-
-
 value(GameState, Player, Value) :-
     [Board, _, _, Player, _, CSb, CSp, WB, WP] = GameState,
-    getScore(Plyer, Score), !,
-    get_piece_coordinates(GameState, PieceCoordinates).
-    
-
+    getScore(Player, Score), !,
+    get_piece_coordinates(GameState, PieceCoordinates),!, 
+    on_board(PieceCoordinates, Count),
+    rotation_value(GameState, SortedResult),
+    Value is 10*Score - 10*(5-Score) + 2
 
 /*value(+GameState, +Player, -Value). This predicate receives the current game state and returns a value measuring how
  good/bad the current game state is to the given Player.*/
@@ -165,7 +245,7 @@ choose_move(GameState, 1, (Square, PlaceInSquare)) :-%internally, square is y an
     write(', what symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(Symbol), nl,
     get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success), %square is col n
-    format('sqinput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
+    format('SQInput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
     Success == 1. 
 % Human vs. Human
 %internally, square is y and place x
