@@ -43,6 +43,7 @@ game_loop(GameState):-
     print_turn(GameState), 
     display_game(GameState),
     choose_spin(GameState, SpunGameState), % choose row or column to spin
+    % there should be a winning piece checker
     display_game(SpunGameState),
     call_construct_and_move(3, SpunGameState, FinalGameState), !, % current player moves
     print(FinalGameState),nl,
@@ -100,7 +101,7 @@ construct_move(GameState, Move, PieceGameState) :-
     Move = (X, Y),
     [Board, 1 | _] = GameState,
     repeat,
-    choose_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
+    choose_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)), % piece to move
     format('Moving piece: ~w~n', Piece),
     [_, 1, _, Player | _ ] = PieceGameState,
     choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
@@ -114,6 +115,22 @@ construct_move(GameState, Move, PieceGameState) :-
     X is PlaceInSquare, 
     Y is Square,
     write('Construct move reached its end!\n'), !.
+
+% Choose move
+choose_move(GameState, 1, (Square, PlaceInSquare)) :-
+    [Board, _, _, Player | _] = GameState,
+    repeat,
+    format_color(Player),
+    write(', what square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
+    catch(read(SqInput), _, fail),
+    nl,
+    format_color(Player),
+    write(', what symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
+    catch(read(Symbol), _, fail), 
+    nl,
+    get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success),
+    format('SQInput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
+    Success == 1, !. 
 
 
 valid_moves_piece(0, 0, blue, Board, Moves) :-
@@ -292,18 +309,6 @@ value(GameState, Player, Value) :-
     NumValue is 0.6 * RotationVal + 0.4 * ScoreWeight,
     (NumValue >= 0 -> Value = good ; Value = bad).
 
-% input_move is now choose move in order to follow the conventions
-choose_move(GameState, 1, (Square, PlaceInSquare)) :-%internally, square is y and place x
-    [Board, _,_,Player |_] = GameState,
-    repeat, format_color(Player),
-    write(', what square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
-    read(SqInput), 
-    nl,format_color(Player),
-    write(', what symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
-    read(Symbol), nl,
-    get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success), %square is col n
-    format('SQInput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
-    Success == 1. 
 
 
 
