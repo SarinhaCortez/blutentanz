@@ -131,7 +131,7 @@ replace_current_piece_waiting_pieces([Board, Mode, Dif, blue, _, CSb, CSp, _, WP
                        [Board, Mode, Dif, blue, Piece, CSb, CSp, NewW, WP]).
 replace_board([_, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP], NewBoard, 
                        [NewBoard, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP]).
-increase_score([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP], NewScore, [Board, Mode, Dif, pink, CurrentPiece, CSb, NewScore, WB, WP]) :-
+increase_score([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP], [Board, Mode, Dif, pink, CurrentPiece, CSb, NewScore, WB, WP]) :-
     NewScore is CSp + 1.
-increase_score([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP], NewScore, [Board, Mode, Dif, blue, CurrentPiece, NewScore, CSp, WB, WP]) :-
+increase_score([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP], [Board, Mode, Dif, blue, CurrentPiece, NewScore, CSp, WB, WP]) :-
     NewScore is CSb + 1.
