@@ -26,7 +26,7 @@ valid_coordinate((X, Y)) :-
 %getters
 get_available_pieces(ListOfPieces, blue, WB) :-
     findall(X, (between(WB, 5, X)), ListOfPieces).
-get_available_pieces_pink(ListOfPieces, pink, WP) :-
+get_available_pieces(ListOfPieces, pink, WP) :-
     findall(X, (between(WP, 5, X)), ListOfPieces).
 
 get_piece(pink, Input, Piece) :-

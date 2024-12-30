@@ -156,3 +156,4 @@ choose_start_player(1, StartPlayer) :-
     read(Input),
     between(1, 2, Input), !,
     player_n(Input, StartPlayer), !.
+
