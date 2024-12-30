@@ -45,10 +45,12 @@ get_piece_coordinates(GameState, PieceCoordinates) :-
     findall((X, Y), (piece_values(Player, Piece), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
 
 get_score(pink, GameState, Score) :- 
-    [_, _, _, _, _, _, CSp | _] = GameState,
+    [_, _, _, _, _, _, CFp | _] = GameState,
+    length(CFp, CSp),
     Score = CSp.
 get_score(blue, GameState, Score) :- 
-    [_, _, _, _, _, CSb | _] = GameState,
+    [_, _, _, _, _, CFb | _] = GameState,
+    length(CFb, CSb),
     Score = CSb.
 
 % Get the index of the square in the board 
@@ -136,10 +138,10 @@ get_symbol(3, X, Symbol) :- nth1(X, ['+', '-', ' ', '*'], Symbol), !.
 get_symbol(4, X, Symbol) :- nth1(X, ['-', '*', '+', ' '], Symbol), !.
 
 %alter state
-increase_score([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP],[Board, Mode, Dif, pink, CurrentPiece, CSb, NewScore, WB, WP]) :-
-    NewScore is CSp + 1.
-increase_score([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP],[Board, Mode, Dif, blue, CurrentPiece, NewScore, CSp, WB, WP]) :-
-    NewScore is CSb + 1.
+increase_score([Board, Mode, Dif, pink, CurrentPiece, CFb, CFp, WB, WP],ScoredPiece,[Board, Mode, Dif, pink, CurrentPiece, CFb, NewScore, WB, WP]) :-
+    append(CFp, [ScoredPiece], NewScore).
+increase_score([Board, Mode, Dif, blue, CurrentPiece, CFb, CFp, WB, WP],ScoredPiece,[Board, Mode, Dif, blue, CurrentPiece, NewScore, CFp, WB, WP]) :-
+    append(CFb, [ScoredPiece], NewScore).
 
 update_score(GameState, X, Y, NewGameState) :-
     [Board,_,_,Player |_] = GameState,
@@ -147,7 +149,8 @@ update_score(GameState, X, Y, NewGameState) :-
     clean_square(X, Y, Board, TempBoard),
     format_color(Player), write('You won a score point!\n'),
     replace_board(GameState, TempBoard, TempGameState), !,
-    increase_score(TempGameState, NewGameState).
+    get_x_y(ScoredPiece, X, Y, Board),
+    increase_score(TempGameState, ScoredPiece, NewGameState).
 update_score(GameState, _, _, NewGameState) :- 
     NewGameState = GameState.
     

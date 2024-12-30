@@ -61,17 +61,19 @@ initial_state(GameConfig, GameState) :-
     board(Board),
     shuffle_board(Board, ShuffledBoard),
     [Mode, Dif, Player] = GameConfig,
-    GameState = [ShuffledBoard, Mode, Dif, Player, -1, 0, 0, 5, 5]. %minus one is current piece to move
+    GameState = [ShuffledBoard, Mode, Dif, Player, -1, [], [], 5, 5]. %minus one is current piece to move
 
 % game over - blue won
 game_over(GameState, Winner) :-
-    [_, _, _, blue, _, CSb , _ , _ ,_]  = GameState,
+    [_, _, _, blue, _, CFb , _ , _ ,_]  = GameState,
+    length(CFb, CSb),
     CSb == 5,
     Winner = blue.
 
 % game over - pink won
 game_over(GameState, Winner) :-
-    [_, _, _, pink, _,  _ , CSp , _ ,_] = GameState,
+    [_, _, _, pink, _,  _ , CFp , _ ,_] = GameState,
+    length(CFp, CSp),
     CSp == 5,
     Winner = pink.
 
@@ -83,9 +85,9 @@ show_winner(Winner) :-
 
 %choosing heuristic
 rotation_value(GameState, SortedResult) :-
-    [Board, Mod, Dif, Player, Piece, CSB, CSP, WB, WP] = GameState,
+    [Board, Mod, Dif, Player, Piece, CFB, CFP, WB, WP] = GameState,
     Opponent = opponent(Player),
-    [Board, Mod, Dif, Opponent, Piece, CSB, CSP, WB, WP] = OpponentGameState,
+    [Board, Mod, Dif, Opponent, Piece, CFB, CFP, WB, WP] = OpponentGameState,
     get_piece_coordinates(GameState, PlayerPieceCoordinates),
     valid_moves(GameState, PlInitMoves),           
     valid_moves(OpponentGameState, OpInitMoves),      

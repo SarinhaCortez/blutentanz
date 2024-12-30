@@ -50,9 +50,10 @@ print_blue_waiting_figures(N) :-
 
 %displaying the board
 print_board(GameState) :-
-    [Board, _, _, _, _, CSb, _, WB, _] = GameState, !,
+    [Board, _, _, _, _, CFb, _, WB, _] = GameState, !,
     write(GameState), nl,
     nl, format_color(blue),
+    length(CFb, CSb),
     format(' score: ~w figures', [CSb]), nl, nl,
     print_blue_waiting_figures(WB),
     write('  '), repeat_format_color(15, 'o'), nl, nl,
@@ -64,10 +65,11 @@ print_board(GameState) :-
 % Base case for printing rows: Stop when the row number exceeds 16
 print_board_rows(N, _Board, GameState) :- 
     N > 16,
-    [_, _, _, _, _,  _, CSp, _, WP] = GameState,
+    [_, _, _, _, _,  _, CFp, _, WP] = GameState,
     write('  '), repeat_format_color(15, '_'), nl, nl,
     print_pink_waiting_figures(WP), nl,
     format_color(pink),
+    length(CFp, CSp),
     format(' score: ~w figures.', [CSp]), !, nl.
 
 % Recursive case: Print each row and continue with the next row
