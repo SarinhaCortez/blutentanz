@@ -110,12 +110,12 @@ clean_square(X, Y, Board, TempBoard) :-
     replace_in_square(Square, X, Symbol, NewSquare),!,
     replace_in_board(Board, Y, NewSquare, TempBoard).
 
-replace_current_piece_waiting_pieces([Board, Mode, Dif, pink, _, CSb, CSp, WB, _], NewW, Piece,
-                       [Board, Mode, Dif, pink, Piece, CSb, CSp, WB, NewW]).
-replace_current_piece_waiting_pieces([Board, Mode, Dif, blue, _, CSb, CSp, _, WP], NewW, Piece,
-                       [Board, Mode, Dif, blue, Piece, CSb, CSp, NewW, WP]).
-replace_board([_, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP], NewBoard, 
-                       [NewBoard, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP]).
+replace_current_piece_waiting_pieces([Board, Mode, Dif, pink, _, CSb, CSp, WB, _, Type], NewW, Piece,
+                       [Board, Mode, Dif, pink, Piece, CSb, CSp, WB, NewW, Type]).
+replace_current_piece_waiting_pieces([Board, Mode, Dif, blue, _, CSb, CSp, _, WP, Type], NewW, Piece,
+                       [Board, Mode, Dif, blue, Piece, CSb, CSp, NewW, WP, Type]).
+replace_board([_, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP, Type], NewBoard, 
+                       [NewBoard, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP, Type]).
 
 replace_in_board(Board, RowIndex, NewRow, NewBoard) :-
     same_length(Board, NewBoard),
@@ -138,10 +138,12 @@ get_symbol(3, X, Symbol) :- nth1(X, ['+', '-', ' ', '*'], Symbol), !.
 get_symbol(4, X, Symbol) :- nth1(X, ['-', '*', '+', ' '], Symbol), !.
 
 %alter state
-increase_score([Board, Mode, Dif, pink, CurrentPiece, CFb, CFp, WB, WP],ScoredPiece,[Board, Mode, Dif, pink, CurrentPiece, CFb, NewScore, WB, WP]) :-
-    append(CFp, [ScoredPiece], NewScore).
-increase_score([Board, Mode, Dif, blue, CurrentPiece, CFb, CFp, WB, WP],ScoredPiece,[Board, Mode, Dif, blue, CurrentPiece, NewScore, CFp, WB, WP]) :-
-    append(CFb, [ScoredPiece], NewScore).
+increase_score([Board, Mode, Dif, pink, CurrentPiece, CFb, CFp, WB, WP, Type] ,ScoredPiece,[Board, Mode, Dif, pink, CurrentPiece, CFb, NewScore, WB, WP, Type]) :-
+    append(CFp, [ScoredPiece], Score),
+    list_to_set(Score, NewScore).
+increase_score([Board, Mode, Dif, blue, CurrentPiece, CFb, CFp, WB, WP, Type] ,ScoredPiece,[Board, Mode, Dif, blue, CurrentPiece, NewScore, CFp, WB, WP, Type]) :-
+    append(CFb, [ScoredPiece], Score),
+    list_to_set(Score, NewScore).
 
 update_score(GameState, X, Y, NewGameState) :-
     [Board,_,_,Player |_] = GameState,
@@ -161,8 +163,11 @@ is_score_point(blue, X, Y) :-
     ScoringPos = [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)],
     member((X, Y), ScoringPos), !.
 
-switch_turn([Board, Mode, Dif, pink, _, CSb, CSp, WB, WP], [Board, Mode, Dif, blue, -1, CSb, CSp, WB, WP]).
-switch_turn([Board, Mode, Dif, blue, _, CSb, CSp, WB, WP], [Board, Mode, Dif, pink, -1, CSb, CSp, WB, WP]).
+switch_turn([Board, 2, Dif, pink, _, CSb, CSp, WB, WP, bot], [Board, 2, Dif, blue, -1, CSb, CSp, WB, WP,human]).
+switch_turn([Board, 2, Dif, blue, _, CSb, CSp, WB, WP, human], [Board, 2, Dif, pink, -1, CSb, CSp, WB, WP, bot]).
+
+switch_turn([Board, Mode, Dif, pink, _, CSb, CSp, WB, WP, Type], [Board, Mode, Dif, blue, -1, CSb, CSp, WB, WP, Type]).
+switch_turn([Board, Mode, Dif, blue, _, CSb, CSp, WB, WP, Type], [Board, Mode, Dif, pink, -1, CSb, CSp, WB, WP, Type]).
 
 update_waiting_pieces(Input, Input, NewW) :- 
     Input > 0,

@@ -1,27 +1,29 @@
 :- consult(board).
 
-choose_spin(GameState, NewGameState) :-
-    [Board, 1, _, Player|_] = GameState,
-    repeat,format_color(Player),
-    write(', choose a row (1-4) or column (A-D) to spin (Input your choice, then press ENTER, . ,ENTER): '),
-    read(Input),
-    process_spin_input(Input, Board, NewBoard, Success),
-    Success == 1, replace_board(GameState, NewBoard, NewGameState), !.
-process_spin_input(Input, Board, NewBoard, Success):- 
+spin(Input, Board, NewBoard, Success):- 
     member(Input, [1, 2, 3, 4]), !,
     spin_row(Input, Board, NewBoard),
     Success = 1.
-process_spin_input(Input, Board, NewBoard, Success) :- 
+spin(Input, Board, NewBoard, Success) :- 
     member(Input, ['a', 'b', 'c', 'd', 'A', 'B', 'C', 'D']), !,
     column_index(Input, Col),
     spin_column(Col, Board, NewBoard),
     Success = 1.
-process_spin_input(_Input, _Board, _NewBoard, Success) :-
+spin(_Input, _Board, _NewBoard, Success) :-
     write('Invalid input. Please choose a row (1-4) or column (A-D)\n'),
     Success = 0.
+
+choose_spin(GameState, NewGameState) :-
+    [Board, 1, _, Player|_] = GameState,
+    repeat, format_color(Player),
+    write(', choose a row (1-4) or column (A-D) to spin (Input your choice, then press ENTER, . ,ENTER): '),
+    read(Input),
+    spin(Input, Board, NewBoard, Success),
+    Success == 1, replace_board(GameState, NewBoard, NewGameState), !.
+
 %returns piece and its xy
 choose_piece(GameState, NewGameState, Piece, (X, Y)) :-
-    [Board, _, _, Player, _, _, _, WB, WP] = GameState,
+    [Board, _, _, Player, _, _, _, WB, WP, _] = GameState,
     choose_piece(Player, WB, WP, NewW, Piece),
     get_x_y(Piece, X, Y, Board),
     format('Piece is in x: ~w, y: ~w\n', [X, Y]),
@@ -64,10 +66,10 @@ choose_mode(Mod) :-
     between(1, 3, Input), !,
     Mod = Input.
 
-choose_start_player(StartPlayer) :-
+choose_start_player(_, StartPlayer) :- StartPlayer = blue.
+choose_start_player(1, StartPlayer) :-
     repeat, 
     write('\nSTART PLAYER  (Input 1 or 2, then press ENTER, . ,ENTER):\n\n 1. Blue\n 2. Pink \n\nStart Player:'),
     read(Input),
     between(1, 2, Input), !,
-    player_n(Input, StartPlayer).
-
+    player_n(Input, StartPlayer), !.
