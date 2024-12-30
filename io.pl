@@ -1,51 +1,110 @@
 :- consult(board).
-:- consult(redefs).
 
+% Mode selection IO
+choose_mode(Mod) :-
+    repeat,
+    write('\nMODE  (Input 1, 2 or 3, then press ENTER):\n\n 1. Human vs Human\n 2. Human vs Computer \n 3. Computer vs Computer \n\nMode: '),
+    catch(read(Input), _, fail), 
+    validate_mode(Input, Mod), !.
+
+validate_mode(Input, Mod) :-
+    integer(Input),
+    between(1, 3, Input),
+    Mod = Input.
+
+validate_mode(_, _) :-
+    write('Invalid input. Please try again.\n'),
+    fail.
+
+% Choose Difficulty IO
+choose_difficulty(1, Dif) :- Dif = 1.
+choose_difficulty(_, Dif) :-
+    repeat, 
+    write('\nDIFFICULTY (Input 1 or 2, then press ENTER, . ,ENTER): :\n\n 1. Einfach\n 2. Schwer \n\nDifficulty:'),
+    catch(read(Input), _, fail),
+    validate_difficulty(Input, Dif), !.
+
+validate_difficulty(Input, Dif) :-
+    integer(Input),
+    between(1, 2, Input), !,
+    Dif = Input.
+
+validate_difficulty(_, _) :-
+    write('Invalid input. Please try again.\n'),
+    fail.
+
+% Start player selection IO
+choose_start_player(StartPlayer) :-
+    repeat, 
+    write('\nSTART PLAYER  (Input 1 or 2, then press ENTER, . ,ENTER):\n\n 1. Blue\n 2. Pink \n\nStart Player:'),
+    catch(read(Input), _, fail),
+    validate_start_player(Input,StartPlayer), !.
+
+validate_start_player(Input, StartPlayer) :-
+    integer(Input),
+    between(1, 2, Input), 
+    player_n(Input, StartPlayer).
+
+validate_start_player(_,_) :-
+    write('Invalid input. Please try again.\n'),
+    fail.
+
+% Initial Spin IO
 choose_spin(GameState, NewGameState) :-
-    [Board, _, _, Player|_] = GameState,
-    repeat,format_color(Player),
+    [Board, 1, _, Player|_] = GameState,
+    repeat,
+    format_color(Player),
     write(', choose a row (1-4) or column (A-D) to spin (Input your choice, then press ENTER, . ,ENTER): '),
-    read(Input),
+    catch(read(Input), _, fail),
     process_spin_input(Input, Board, NewBoard, Success),
-    Success == 1, replace_board(GameState, NewBoard, NewGameState), !.
+    Success == 1,
+    replace_board(GameState, NewBoard, NewGameState), !.
 
+% spin row
 process_spin_input(Input, Board, NewBoard, Success):- 
     member(Input, [1, 2, 3, 4]), !,
     spin_row(Input, Board, NewBoard),
     Success = 1.
+
+% spin column
 process_spin_input(Input, Board, NewBoard, Success) :- 
     member(Input, ['a', 'b', 'c', 'd', 'A', 'B', 'C', 'D']), !,
     column_index(Input, Col),
     spin_column(Col, Board, NewBoard),
     Success = 1.
+
 process_spin_input(_Input, _Board, _NewBoard, Success) :-
     write('Invalid input. Please choose a row (1-4) or column (A-D)\n'),
     Success = 0.
-%returns piece and its xy
+
+
+% Choose piece to move
 choose_piece(GameState, NewGameState, Piece, (X, Y)) :-
     [Board, _, _, Player, _, _, _, WB, WP] = GameState,
     choose_piece(Player, WB, WP, NewW, Piece),
-    getXY(Piece, X, Y, Board),
+    get_x_y(Piece, X, Y, Board),
     format('Piece is in x: ~w, y: ~w\n', [X, Y]),
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, NewGameState).
 
 choose_piece(pink, _, WP, NewW, Piece) :-
-    possible_pieces_pink(Pieces, WP),
-    repeat, format_color(pink),
-    write(', what piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
+    get_available_pieces(Pieces, pink, WP),
+    repeat,
+    format_color(pink),
+    write(', what piece do you want to move? (Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
     print(Pieces),
-    read(Input),
+    catch(read(Input), _, fail), 
     validate_piece_input(Input, Pieces, Success),
-    Success == 1, 
-    updateWaiting(Input, WP, NewW), !,
-    getPiece(pink, Input, Piece), !.
+    Success == 1,
+    update_waiting_pieces(Input, WP, NewW),
+    get_piece(pink, Input, Piece), !.
 
 choose_piece(blue, WB, _, NewW, Piece) :-
-    possible_pieces_blue(Pieces, WB),
-    repeat, format_color(blue),
-    write(', what piece do you want to move?(Input your choice, then press ENTER, . ,ENTER):\n You can choose from '),
+    get_available_pieces(Pieces, blue, WB),
+    repeat,
+    format_color(blue),
+    write(', what piece do you want to move? (Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
     print(Pieces),
-    read(Input),
+    catch(read(Input), _, fail),
     validate_piece_input(Input, Pieces, Success),
     Success == 1,
     updateWaiting(Input, WB, NewW), 
@@ -100,38 +159,3 @@ choose_start_player(StartPlayer) :-
     between(1, 2, Input), !,
     player_n(Input, StartPlayer).
 
-player_n(1, Color) :- Color = blue.
-player_n(2, Color) :- Color = pink.
-
-
-% Get the index of the square in the board 
-get_square_index(Board, Input, Symbol, SquareY, PlaceInSquare, Success) :-
-    validate_move_input(Input, ColVisual, RowVisual), !,
-    write('Input passed Validation.\n'), 
-    SquareY is (RowVisual - 1) * 4 + ColVisual, !,
-    nth1(SquareY, Board, SqContent), !,
-    nth1(PlaceInSquare, SqContent, Symbol), !,
-    Success = 1. 
-get_square_index(_Board, _Input, _Symbol, _SquareY, _PlaceInSquare, Success) :-
-    write('Oops! This position is not available in the square you chose! Try again.\n'),
-    Success = 0.
-
-%input processing
-validate_move_input(Input, Col, Row) :- 
-    atom_chars(Input, [ColChar, RowChar]),
-    member(RowChar, ['1', '2', '3', '4']), !,
-    member(ColChar, ['a', 'b', 'c', 'd', 'A', 'B', 'C', 'D']), !,
-    column_index(ColChar, Col), !, 
-    char_code(RowChar, Code),
-    Row is Code - 48.
-
-replace_current_piece_waiting_pieces([Board, Mode, Dif, pink, _, CSb, CSp, WB, _], NewW, Piece,
-                       [Board, Mode, Dif, pink, Piece, CSb, CSp, WB, NewW]).
-replace_current_piece_waiting_pieces([Board, Mode, Dif, blue, _, CSb, CSp, _, WP], NewW, Piece,
-                       [Board, Mode, Dif, blue, Piece, CSb, CSp, NewW, WP]).
-replace_board([_, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP], NewBoard, 
-                       [NewBoard, Mode, Dif, Player, CurrentPiece, CSb, CSp, WB, WP]).
-increase_score([Board, Mode, Dif, pink, CurrentPiece, CSb, CSp, WB, WP], [Board, Mode, Dif, pink, CurrentPiece, CSb, NewScore, WB, WP]) :-
-    NewScore is CSp + 1.
-increase_score([Board, Mode, Dif, blue, CurrentPiece, CSb, CSp, WB, WP], [Board, Mode, Dif, blue, CurrentPiece, NewScore, CSp, WB, WP]) :-
-    NewScore is CSb + 1.
