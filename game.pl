@@ -1,7 +1,4 @@
 
-:- consult(io).
-:- consult(board).
-
 /*USE MEANINGFUL NAMES FOR PREDICATES AND ARGUMENTS. 
 TRY TO WRITE CODE THAT ‘LOOKS DECLARATIVE’ AND AVOID USING ‘IMPERATIVE-LOOKING’ 
 CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE 
@@ -9,6 +6,132 @@ CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE
 
 /*d FOR UNIFORMIZATION 
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
+:- consult(io).
+
+
+% Start Game
+play :-
+    blutentanz,
+    choose_mode(Mod), !, % choose game mode
+    choose_start_player(Player), !, % choose start player color
+    choose_difficulty(Mod, Dif), !, % choose difficulty for PC
+    GameConfig = [Mod, Dif, Player], !, 
+    initial_state(GameConfig, GameState),
+    display_game(GameState), 
+    game_loop(GameState). % start game loop
+
+% Initial Game State
+initial_state(GameConfig, GameState) :-
+    board(Board),
+    shuffle_board(Board, ShuffledBoard),
+    [Mode, Dif, Player] = GameConfig,
+    GameState = [ShuffledBoard, Mode, Dif, Player, -1, [], [], 5, 5]. %minus one is current piece to move
+
+% Display Board
+display_game(GameState) :- 
+    print_board(GameState).
+
+
+% Game Loop(+GameState)
+% check for winner
+game_loop(GameState):-
+    game_over(GameState, Winner), !, 
+    display_game(GameState),
+    show_winner(Winner).
+
+% regular game loop
+game_loop(GameState):-
+    print_turn(GameState), 
+    display_game(GameState),
+    choose_spin(GameState, SpunGameState), % choose row or column to spin
+    % there should be a winning piece checker
+    display_game(SpunGameState),
+    call_construct_and_move(3, SpunGameState, FinalGameState), !, % current player moves
+    print(FinalGameState),nl,
+    switch_turn(FinalGameState, OtherPlayerGameState),
+    game_loop(OtherPlayerGameState).
+
+% Game Over
+% game over - blue won
+game_over(GameState, Winner) :-
+    [_, _, _, blue, _, CFb , _ , _ ,_]  = GameState,
+    length(CFb, CSb),
+    CSb == 5,
+    Winner = blue.
+
+% game over - pink won
+game_over(GameState, Winner) :-
+    [_, _, _, pink, _,  _ , CFp , _ ,_] = GameState,
+    length(CFp, CSp),
+    CSp == 5,
+    Winner = pink.
+
+% game over - display winner
+show_winner(Winner) :-
+    format_color(Winner),
+    write(" won!"),
+    nl.
+
+
+% Player Turn Moves
+
+call_construct_and_move(0, GameState, GameState) :- !.
+call_construct_and_move(N, GameState, FinalGameState) :-
+    N > 0,
+    repeat,
+    construct_move(GameState, (NewX, NewY), PieceGameState),
+    format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
+    move(PieceGameState,(NewX, NewY), MovedGameState),
+    write('Exited move successfuly!'),
+    display_game(MovedGameState),
+    N1 is N - 1,
+    call_construct_and_move(N1, MovedGameState, FinalGameState).
+
+/*
+should_stop(N).
+call_choose_and_move(N, GameState) :-
+    should_stop(N), 
+    writeln('Condition met, stopping!'), !.*/
+
+% Play Logic
+
+% Human vs. Human
+%internally, square is y and place x
+%choose move is now construct
+construct_move(GameState, Move, PieceGameState) :-
+    Move = (X, Y),
+    [Board, 1 | _] = GameState,
+    repeat,
+    choose_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)), % piece to move
+    format('Moving piece: ~w~n', Piece),
+    [_, 1, _, Player | _ ] = PieceGameState,
+    choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
+    format('Input move is x:~w, y:~w~n', [PlaceInSquare, Square]),
+    valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
+    write('got after valid_moves_piece!\n'),
+    print(Moves),nl,
+    member((PlaceInSquare, Square), Moves),
+    write('Move is valid! \n'),
+    format('~w is moving from x:~w y:~w to x:~w y:~w ~n', [Player, Curr_X, Curr_Y, Square, PlaceInSquare]),
+    X is PlaceInSquare, 
+    Y is Square,
+    write('Construct move reached its end!\n'), !.
+
+% Choose move
+choose_move(GameState, 1, (Square, PlaceInSquare)) :-
+    [Board, _, _, Player | _] = GameState,
+    repeat,
+    format_color(Player),
+    write(', what square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
+    catch(read(SqInput), _, fail),
+    nl,
+    format_color(Player),
+    write(', what symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
+    catch(read(Symbol), _, fail), 
+    nl,
+    get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success),
+    format('SQInput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
+    Success == 1, !. 
 
 valid_moves_piece(0, 0, blue, Board, Moves) :-
     PossibleMoves = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],

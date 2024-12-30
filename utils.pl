@@ -79,6 +79,7 @@ is_valid_move(Player, Board, (X, Y)) :-
     nth1(Y, Board, Row),
     nth1(X, Row, Char),
     can_move_to(Player, Char), !.
+    
 validate_piece_input(Input, Pieces, Success):-
     member(Input, Pieces),!, Success = 1.
 validate_piece_input(_Input, _Pieces, Success) :-
