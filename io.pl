@@ -131,12 +131,6 @@ getXY(Piece, X, Y, Board) :-
 getXY(_Piece, X, Y, _B) :-
     X = 0, Y = 0.
 
-validate_piece_input(Input, Pieces, Success):-
-    member(Input, Pieces),!, Success = 1.
-
-validate_piece_input(_Input, _Pieces, Success) :-
-    Success = 0.
-
 choose_difficulty(1, Dif) :- Dif = 1.
 choose_difficulty(_, Dif) :-
     repeat, 
