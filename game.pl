@@ -102,6 +102,25 @@ choose_move(GameState, 1, (Square, PlaceInSquare)) :- %internally, square is y a
     format('SQInput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
     Success == 1. 
 
+% Human vs. Human. Internally, square is y and place x
+construct_move(GameState, Move, PieceGameState) :-
+    Move = (X, Y),
+    [Board | _] = GameState,
+    repeat,
+    choose_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
+    format('Moving piece: ~w~n', Piece),
+    [_, 1, _, Player | _ ] = PieceGameState,
+    choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
+    format('Input move is x:~w, y:~w~n', [PlaceInSquare, Square]),
+    valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
+    write('got after valid_moves_piece!\n'),
+    print(Moves),nl,
+    member((PlaceInSquare, Square), Moves),
+    write('Move is valid! \n'),
+    format('~w is moving from x:~w y:~w to x:~w y:~w ~n', [Player, Curr_X, Curr_Y, Square, PlaceInSquare]),
+    X is PlaceInSquare, 
+    Y is Square,
+    write('Construct move reached its end!\n'), !.
 
 % game_loop(+GameState)
 game_loop(GameState):-
@@ -110,6 +129,7 @@ game_loop(GameState):-
     show_winner(Winner).
 game_loop(GameState):-
     [_, _, _, _, _, _, _, _, _, human] = GameState,
+    write('Human turn\n'), nl,
     print_turn(GameState),
     display_game(GameState),
     choose_spin(GameState, SpunGameState), !,
@@ -117,17 +137,20 @@ game_loop(GameState):-
     call_construct_and_move(3, SpunGameState, FinalGameState), !,
     print(FinalGameState), nl,
     switch_turn(FinalGameState, OtherPlayerGameState),
-    game_loop(OtherPlayerGameState).
+    game_loop(OtherPlayerGameState), !.
 game_loop(GameState):-
+    print(GameState),nl,
     [_, _, 2, _, _, _, _, _, _, bot] = GameState, %dif2
+    write('Bot turn, w minimax\n'), nl,
     print_turn(GameState),
     display_game(GameState),
     minimax_and_move(GameState, FinalGameState),!,
     print(FinalGameState),nl,
     switch_turn(FinalGameState, OtherPlayerGameState),
-    game_loop(OtherPlayerGameState).
+    game_loop(OtherPlayerGameState), !.
 game_loop(GameState):-
     [_, _, 1, _, _, _, _, _, _, bot] = GameState, %dif1
+    write('bot turn woth random\n'), nl,
     print_turn(GameState),
     display_game(GameState),
     minimax_and_move(GameState, FinalGameState),!,%random logic called here

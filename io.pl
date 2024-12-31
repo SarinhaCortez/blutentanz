@@ -52,7 +52,7 @@ validate_start_player(_,_) :-
 
 % Initial Spin IO
 choose_spin(GameState, NewGameState) :-
-    [Board, 1, _, Player|_] = GameState,
+    [Board, _, _, Player|_] = GameState,
     repeat,
     format_color(Player),
     write(', choose a row (1-4) or column (A-D) to spin (Input your choice, then press ENTER, . ,ENTER): '),
