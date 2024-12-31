@@ -1,18 +1,21 @@
 %game utils
-opponent(blue) :- pink.
-opponent(pink) :- blue.
+opponent(blue, Opponent) :- Opponent = pink.
+opponent(pink, Opponent) :- Opponent = blue.
 
 player_n(1, Color) :- Color = blue.
 player_n(2, Color) :- Color = pink.
 
 piece_values(pink, N) :- between(0, 4, N).
-piece_values(blue, N) :- between(0, 9, N).
+piece_values(blue, N) :- between(5, 9, N).
 
 column_index('a', 1).
 column_index('b', 2).
 column_index('c', 3).
 column_index('d', 4).
+%column_index(_, 0).
 column_index(A, Col) :- char_code(A, Code), Code >= 65, Code =< 68, Col is Code - 64.
+
+
 
 can_move_to(blue, '*') :- !.
 can_move_to(_, '-') :- !.
@@ -40,10 +43,18 @@ get_x_y(Piece, X, Y, Board) :-
 get_x_y(_Piece, X, Y, _B) :-
     X = 0, Y = 0.
 
+% Predicate to get piece coordinates for pink player, excluding pieces in CSP
 get_piece_coordinates(GameState, PieceCoordinates) :-
-    [Board, _, _, Player | _] = GameState,
-    findall((X, Y), (piece_values(Player, Piece), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
+    [Board, _, _, pink, _, _, CSP, _, _, _] = GameState,
+    findall(Piece, (between(1, 5, Piece), \+ member(Piece, CSP)), Pieces),
+    findall((X, Y), (member(Piece, Pieces), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
 
+% Predicate to get piece coordinates for blue player, excluding pieces in CSB
+get_piece_coordinates(GameState, PieceCoordinates) :-
+    [Board, _, _, blue, _, CSB, _, _, _, _] = GameState,
+    findall(Piece, (between(1, 5, Piece), \+ member(Piece, CSB)), Pieces),
+    findall((X, Y), (member(Piece, Pieces), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
+    
 get_score(pink, GameState, Score) :- 
     [_, _, _, _, _, _, CFp | _] = GameState,
     length(CFp, CSp),
@@ -141,10 +152,10 @@ get_symbol(4, X, Symbol) :- nth1(X, ['-', '*', '+', ' '], Symbol), !.
 %alter state
 increase_score([Board, Mode, Dif, pink, CurrentPiece, CFb, CFp, WB, WP, Type] ,ScoredPiece,[Board, Mode, Dif, pink, CurrentPiece, CFb, NewScore, WB, WP, Type]) :-
     append(CFp, [ScoredPiece], Score),
-    list_to_set(Score, NewScore).
+    remove_duplicates(Score, NewScore).
 increase_score([Board, Mode, Dif, blue, CurrentPiece, CFb, CFp, WB, WP, Type] ,ScoredPiece,[Board, Mode, Dif, blue, CurrentPiece, NewScore, CFp, WB, WP, Type]) :-
     append(CFb, [ScoredPiece], Score),
-    list_to_set(Score, NewScore).
+    remove_duplicates(Score, NewScore).
 
 update_score(GameState, X, Y, NewGameState) :-
     [Board,_,_,Player |_] = GameState,

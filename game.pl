@@ -7,7 +7,6 @@ CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE
 /*d FOR UNIFORMIZATION 
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
 :- consult(io).
-:- use_module(library(lists)).
 
 valid_moves_piece(0, 0, blue, Board, Moves) :-
     PossibleMoves = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],
@@ -205,6 +204,7 @@ call_move(GameState, [], MovedGameState) :-
 call_move(GameState, [H|T], FinalGameState) :-
     [_,_,_, pink, _, _,_,_,WP,_] = GameState,
     H = (Piece, X, Y), Move = (X, Y),
+    format('Piece: ~w, X: ~w, Y: ~w~n', [Piece, X, Y]),
     get_piece(pink, Input, Piece),
     update_waiting_pieces(Input, WP, NewW), !,
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, PieceGameState),
@@ -215,12 +215,14 @@ call_move(GameState, [H|T], FinalGameState) :-
     call_move(MovedGameState, T, FinalGameState).
 call_move(GameState, [H|T], FinalGameState) :-
     [_,_,_, blue, _, _,_,WB,_] = GameState,
-    H = (Piece, X, Y), Move = (X, Y),
+    H = (Piece, X, Y), Move = (X, Y), 
+    format('Piece: ~w, X: ~w, Y: ~w~n', [Piece, X, Y]),
     get_piece(blue, Input, Piece),
     update_waiting_pieces(Input, WB, NewW), !,
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, NewGameState),
     move(NewGameState, Move, MovedGameState),
-    column_index(Col, Y),  get_piece(blue, P, Piece), format_color(blue),
+    column_index(Col, Y), 
+    get_piece(blue, P, Piece), format_color(blue),
     format(' is moving piece ~w to Row ~w and Column ~w~n', [P, X, Col]),
     display_game(MovedGameState),
     call_move(MovedGameState, T, FinalGameState).
@@ -228,18 +230,18 @@ call_move(GameState, [H|T], FinalGameState) :-
 % Choosing Heuristic
 rotation_value(GameState, SortedResult, TotalBenefit) :-
     [Board, Mod, Dif, Player, Piece, CFB, CFP, WB, WP, Type] = GameState,
-    Opponent = opponent(Player),
+    opponent(Player, Opponent),
     [Board, Mod, Dif, Opponent, Piece, CFB, CFP, WB, WP, Type]= OpponentGameState,
     get_piece_coordinates(GameState, PlayerPieceCoordinates),
-    valid_moves(GameState, PlInitMoves),
+    valid_moves(GameState, PInitMoves), remove_duplicates(PInitMoves, PlInitMoves),
     print(PlInitMoves), nl,        
-    valid_moves(OpponentGameState, OpInitMoves),      
+    valid_moves(OpponentGameState, OInitMoves),  remove_duplicates(OInitMoves, OpInitMoves),
     print(OpInitMoves), nl,
     include(is_score_point(Player), PlInitMoves, PlayerStartScoreMoves),  
     include(is_score_point(Opponent), OpInitMoves, OpponentStartScoreMoves),    
     unpack_coordinates(PlayerPieceCoordinates, Xs, Ys),      
-    list_to_set(Xs, XSet),                             
-    list_to_set(Ys, YSet),
+    remove_duplicates(Xs, XSet),                             
+    remove_duplicates(Ys, YSet),
     findall((RowIndex, NewBoard), 
         (member(RowIndex, XSet), spin_row(RowIndex, Board, NewBoard)), SpunRows),
     findall((ColChar, NewBoard), 
@@ -342,3 +344,4 @@ update_best_move(Value, CurrBestValue, Move, _CurrBestMove, NewBest) :-
 update_best_move(Value, CurrBestValue, _Move, CurrBestMove, NewBest) :-
     Value =< CurrBestValue,
     NewBest = (CurrBestMove, CurrBestValue).
+

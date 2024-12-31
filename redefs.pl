@@ -1,3 +1,5 @@
+:- use_module(library(lists)).
+
 between(Low, High, Value) :-
     Low =< High,
     Value = Low.
@@ -15,3 +17,14 @@ atom_number(Atom, Number) :-
     number(Number),    % Ensure the second argument is a number
     number_codes(Number, Codes), % Convert number to character codes
     atom_codes(Atom, Codes). % Convert character codes to an atom
+
+remove_duplicates([], []).
+
+% Recursive case: Check if the head of the list is already in the processed tail
+remove_duplicates([H|T], Result) :-
+    member(H, T),            % If H is in the tail, skip it
+    remove_duplicates(T, Result).
+
+remove_duplicates([H|T], [H|Result]) :-
+    \+ member(H, T),         % If H is not in the tail, keep it
+    remove_duplicates(T, Result).
