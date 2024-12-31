@@ -119,10 +119,18 @@ game_loop(GameState):-
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
 game_loop(GameState):-
-    [_, _, _, _, _, _, _, _, _, bot] = GameState,
+    [_, _, 2, _, _, _, _, _, _, bot] = GameState, %dif2
     print_turn(GameState),
     display_game(GameState),
     minimax_and_move(GameState, FinalGameState),!,
+    print(FinalGameState),nl,
+    switch_turn(FinalGameState, OtherPlayerGameState),
+    game_loop(OtherPlayerGameState).
+game_loop(GameState):-
+    [_, _, 1, _, _, _, _, _, _, bot] = GameState, %dif1
+    print_turn(GameState),
+    display_game(GameState),
+    minimax_and_move(GameState, FinalGameState),!,%random logic called here
     print(FinalGameState),nl,
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
