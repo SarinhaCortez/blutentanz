@@ -83,7 +83,7 @@ choose_piece(GameState, NewGameState, Piece, (X, Y)) :-
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, NewGameState).
 
 choose_piece(pink, _, WP, NewW, Piece) :-
-    get_available_pieces(Pieces, pink, WP),
+    get_available_pieces(Pieces, pink, WP), !,
     repeat,
     format_color(pink),
     write(', what piece do you want to move? (Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
@@ -95,13 +95,15 @@ choose_piece(pink, _, WP, NewW, Piece) :-
     get_piece(pink, Input, Piece), !.
 
 choose_piece(blue, WB, _, NewW, Piece) :-
-    get_available_pieces(Pieces, blue, WB),
+    get_available_pieces(Pieces, blue, WB), !,
     repeat,
     format_color(blue),
     write(', what piece do you want to move? (Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
     print(Pieces),
-    catch(read(Input), _, fail),
+    catch(read(Input), _, fail), 
     validate_piece_input(Input, Pieces, Success),
     Success == 1,
-    updateWaiting(Input, WB, NewW), 
-    getPiece(blue, Input, Piece), !.
+    update_waiting_pieces(Input, WB, NewW),
+    get_piece(blue, Input, Piece), !.
+
+

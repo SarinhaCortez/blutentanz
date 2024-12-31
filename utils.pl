@@ -25,9 +25,9 @@ valid_coordinate((X, Y)) :-
     (X, Y) \= (0, 0).
 %getters
 get_available_pieces(ListOfPieces, blue, WB) :-
-    findall(X, (between(WB, 5, X)), ListOfPieces).
+    findall(X, (between(WB, 5, X)), ListOfPieces), !.
 get_available_pieces(ListOfPieces, pink, WP) :-
-    findall(X, (between(WP, 5, X)), ListOfPieces).
+    findall(X, (between(WP, 5, X)), ListOfPieces), !.
 
 get_piece(pink, Input, Piece) :-
     Piece is Input - 1.
@@ -148,7 +148,7 @@ increase_score([Board, Mode, Dif, blue, CurrentPiece, CFb, CFp, WB, WP, Type] ,S
 
 update_score(GameState, X, Y, NewGameState) :-
     [Board,_,_,Player |_] = GameState,
-    is_score_point(Player, X, Y), !,
+    is_score_point(Player, (X, Y)), !,
     clean_square(X, Y, Board, TempBoard),
     format_color(Player), write('You won a score point!\n'),
     replace_board(GameState, TempBoard, TempGameState), !,
@@ -157,10 +157,10 @@ update_score(GameState, X, Y, NewGameState) :-
 update_score(GameState, _, _, NewGameState) :- 
     NewGameState = GameState.
     
-is_score_point(pink, X, Y) :-
+is_score_point(pink, (X, Y)) :-
     ScoringPos = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],
     member((X, Y), ScoringPos), !.
-is_score_point(blue, X, Y) :-
+is_score_point(blue, (X, Y)) :-
     ScoringPos = [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)],
     member((X, Y), ScoringPos), !.
 

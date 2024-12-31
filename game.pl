@@ -7,7 +7,7 @@ CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE
 /*d FOR UNIFORMIZATION 
 PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
 :- consult(io).
-
+:- use_module(library(lists)).
 
 valid_moves_piece(0, 0, blue, Board, Moves) :-
     PossibleMoves = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],
@@ -109,7 +109,7 @@ construct_move(GameState, Move, PieceGameState) :-
     repeat,
     choose_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
     format('Moving piece: ~w~n', Piece),
-    [_, 1, _, Player | _ ] = PieceGameState,
+    [_, _, _, Player | _ ] = PieceGameState,
     choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
     format('Input move is x:~w, y:~w~n', [PlaceInSquare, Square]),
     valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
@@ -231,8 +231,10 @@ rotation_value(GameState, SortedResult, TotalBenefit) :-
     Opponent = opponent(Player),
     [Board, Mod, Dif, Opponent, Piece, CFB, CFP, WB, WP, Type]= OpponentGameState,
     get_piece_coordinates(GameState, PlayerPieceCoordinates),
-    valid_moves(GameState, PlInitMoves),           
+    valid_moves(GameState, PlInitMoves),
+    print(PlInitMoves), nl,        
     valid_moves(OpponentGameState, OpInitMoves),      
+    print(OpInitMoves), nl,
     include(is_score_point(Player), PlInitMoves, PlayerStartScoreMoves),  
     include(is_score_point(Opponent), OpInitMoves, OpponentStartScoreMoves),    
     unpack_coordinates(PlayerPieceCoordinates, Xs, Ys),      
