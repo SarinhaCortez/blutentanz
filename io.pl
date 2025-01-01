@@ -70,8 +70,13 @@ spin(Input, Board, NewBoard, Success) :-
     column_index(Input, Col),
     spin_column(Col, Board, NewBoard),
     Success = 1.
-spin(_Input, _Board, _NewBoard, Success) :-
-    write('Invalid input. Please choose a row (1-4) or column (A-D)\n'),
+spin(0, Board, NewBoard, Success) :-
+    random(1, 4, Index),
+    random_member(SpinType, [spin_row, spin_column]),
+    call(SpinType, Index, Board, NewBoard),
+    Success = 1.
+spin(Input, _Board, _NewBoard, Success) :-
+    write('Invalid input. Please choose a row (1-4) or column (A-D) Input was'), print(Input), nl,
     Success = 0.
 
 %returns piece and its xy
@@ -83,7 +88,7 @@ choose_piece(GameState, NewGameState, Piece, (X, Y)) :-
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, NewGameState).
 
 choose_piece(pink, _, WP, NewW, Piece) :-
-    get_available_pieces(Pieces, pink, WP), !,
+    get_waiting_pieces(Pieces, pink, WP), !,
     repeat,
     format_color(pink),
     write(', what piece do you want to move? (Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
@@ -95,7 +100,7 @@ choose_piece(pink, _, WP, NewW, Piece) :-
     get_piece(pink, Input, Piece), !.
 
 choose_piece(blue, WB, _, NewW, Piece) :-
-    get_available_pieces(Pieces, blue, WB), !,
+    get_waiting_pieces(Pieces, blue, WB), !,
     repeat,
     format_color(blue),
     write(', what piece do you want to move? (Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),

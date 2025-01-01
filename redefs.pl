@@ -28,3 +28,7 @@ remove_duplicates([H|T], Result) :-
 remove_duplicates([H|T], [H|Result]) :-
     \+ member(H, T),         % If H is not in the tail, keep it
     remove_duplicates(T, Result).
+sum_list([], 0).
+sum_list([H|T], Sum) :-
+    sum_list(T, Rest),
+    Sum is H + Rest.

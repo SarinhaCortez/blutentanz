@@ -8,15 +8,19 @@ player_n(2, Color) :- Color = pink.
 piece_values(pink, N) :- between(0, 4, N).
 piece_values(blue, N) :- between(5, 9, N).
 
+column_index(0, 0) :- !.
 column_index('a', 1).
 column_index('b', 2).
 column_index('c', 3).
 column_index('d', 4).
-%column_index(_, 0).
 column_index(A, Col) :- char_code(A, Code), Code >= 65, Code =< 68, Col is Code - 64.
 
-
-
+select_w(GameState, W):-
+    [_, _, _, blue, _, _, _, WB,_, _] = GameState,
+    W = WB.
+select_w(GameState, W):-
+    [_, _, _, pink, _, _, _, _, WP, _] = GameState,
+    W = WP.
 can_move_to(blue, '*') :- !.
 can_move_to(_, '-') :- !.
 can_move_to(pink, '+') :- !.
@@ -27,9 +31,9 @@ unpack_coordinates([(X, Y) | Rest], [X | Xs], [Y | Ys]) :-
 valid_coordinate((X, Y)) :-
     (X, Y) \= (0, 0).
 %getters
-get_available_pieces(ListOfPieces, blue, WB) :-
+get_waiting_pieces(ListOfPieces, blue, WB) :-
     findall(X, (between(WB, 5, X)), ListOfPieces), !.
-get_available_pieces(ListOfPieces, pink, WP) :-
+get_waiting_pieces(ListOfPieces, pink, WP) :-
     findall(X, (between(WP, 5, X)), ListOfPieces), !.
 
 get_piece(pink, Input, Piece) :-
@@ -54,7 +58,7 @@ get_piece_coordinates(GameState, PieceCoordinates) :-
     [Board, _, _, blue, _, CSB, _, _, _, _] = GameState,
     findall(Piece, (between(1, 5, Piece), \+ member(Piece, CSB)), Pieces),
     findall((X, Y), (member(Piece, Pieces), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
-    
+
 get_score(pink, GameState, Score) :- 
     [_, _, _, _, _, _, CFp | _] = GameState,
     length(CFp, CSp),
