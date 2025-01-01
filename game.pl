@@ -2,10 +2,8 @@
 /*USE MEANINGFUL NAMES FOR PREDICATES AND ARGUMENTS. 
 TRY TO WRITE CODE THAT ‘LOOKS DECLARATIVE’ AND AVOID USING ‘IMPERATIVE-LOOKING’ 
 CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE 
-(E.G., USING TAIL RECURSION WHEN POSSIBLE).
+(E.G., USING TAIL RECURSION WHEN POSSIBLE).*/
 
-/*d FOR UNIFORMIZATION 
-PURPOSES, COORDINATES SHOULD START AT (1,1) AT THE LOWER LEFT CORNER.*/
 :- consult(io).
 
 valid_moves_piece(0, 0, blue, Board, Moves) :-
@@ -86,8 +84,13 @@ show_winner(Winner) :-
 valid_moves(GameState, ListOfMoves) :-
     get_piece_coordinates(GameState, PieceCoordinates),
     [Board, _, _, Player | _] = GameState,
-    findall(Moves, (member((XPiece, YPiece), PieceCoordinates), valid_moves_piece(XPiece, YPiece, Player, Board, Moves)), ListOfListsofMoves),
-    append(ListOfListsofMoves, ListOfMoves).
+    findall((Piece, X, Y),
+        (
+            member((Piece, XPiece, YPiece), PieceCoordinates),
+            valid_moves_piece(XPiece, YPiece, Player, Board, Moves),
+            member((X, Y), Moves)
+        ),
+        ListOfMoves).
 
 choose_move(GameState, 1, (Square, PlaceInSquare)) :- %internally, square is y and place x
     [Board, _,_,Player |_] = GameState,
@@ -112,15 +115,12 @@ construct_move(GameState, Move, PieceGameState) :-
     choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
     format('Input move is x:~w, y:~w~n', [PlaceInSquare, Square]),
     valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
-    write('got after valid_moves_piece!\n'),
     print(Moves),nl,
     member((PlaceInSquare, Square), Moves),
     write('Move is valid! \n'),
     format('~w is moving from x:~w y:~w to x:~w y:~w ~n', [Player, Curr_X, Curr_Y, Square, PlaceInSquare]),
     X is PlaceInSquare, 
-    Y is Square,
-    write('Construct move reached its end!\n'), !.
-
+    Y is Square.
 % game_loop(+GameState)
 game_loop(GameState):-
     game_over(GameState, Winner), !,
@@ -149,10 +149,11 @@ game_loop(GameState):-
     game_loop(OtherPlayerGameState), !.
 game_loop(GameState):-
     [_, _, 1, _, _, _, _, _, _, bot] = GameState, %dif1
-    write('bot turn woth random\n'), nl,
+    write('bot turn with random\n'), nl,
     print_turn(GameState),
-    display_game(GameState),
-    minimax_and_move(GameState, FinalGameState),!,%random logic called here
+    random_moves(GameState, Moves, WGameState),!,
+    call_move(WGameState, Moves, FinalGameState),
+    display_game(FinalGameState),
     print(FinalGameState),nl,
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
@@ -189,7 +190,7 @@ call_construct_and_move(_N, GameState, GameState) :-
     valid_moves(GameState, Moves),
     (\+ Moves), !, format_color(Player),
     write(', you ran out of possible moves. Switching turn.\n'), !.
-
+%unused
 minimax_and_move(GameState, FinalGameState) :-
     [Board, _, _, Player | _] = GameState,
     minimax(GameState, 2, Player, BestMove, _),
@@ -200,34 +201,18 @@ minimax_and_move(GameState, FinalGameState) :-
     replace_board(GameState, NewBoard, SpunGameState),
     call_move(SpunGameState, Moves, FinalGameState), !.
 
-call_move(GameState, [], MovedGameState) :-
-    MovedGameState is GameState.
+call_move(GameState, [], FinalGameState) :-
+    write('base case!\n'),
+    FinalGameState = GameState.
 call_move(GameState, [H|T], FinalGameState) :-
-    [_,_,_, pink, _, _,_,_,WP,_] = GameState,
+    [_, _, _, Player | _] = GameState,
+    select_w(GameState, Player, W), W > 0,
     H = (Piece, X, Y), Move = (X, Y),
     format('Piece: ~w, X: ~w, Y: ~w~n', [Piece, X, Y]),
-    get_piece(pink, Input, Piece),
-    update_waiting_pieces(Input, WP, NewW), !,
-    replace_current_piece_waiting_pieces(GameState, NewW, Piece, PieceGameState),
+    replace_current_piece_waiting_pieces(GameState, W, Piece, PieceGameState),
     move(PieceGameState, Move, MovedGameState),
-    column_index(Col, Y), get_piece(pink, P, Piece), format_color(pink),
-    format(' is moving piece ~w to Row ~w and Column ~w~n', [P, X, Col]),
-    display_game(MovedGameState),
     call_move(MovedGameState, T, FinalGameState).
-call_move(GameState, [H|T], FinalGameState) :-
-    [_,_,_, blue, _, _,_,WB,_] = GameState,
-    H = (Piece, X, Y), Move = (X, Y), 
-    format('Piece: ~w, X: ~w, Y: ~w~n', [Piece, X, Y]),
-    get_piece(blue, Input, Piece),
-    update_waiting_pieces(Input, WB, NewW), !,
-    replace_current_piece_waiting_pieces(GameState, NewW, Piece, NewGameState),
-    move(NewGameState, Move, MovedGameState),
-    column_index(Col, Y), 
-    get_piece(blue, P, Piece), format_color(blue),
-    format(' is moving piece ~w to Row ~w and Column ~w~n', [P, X, Col]),
-    display_game(MovedGameState),
-    call_move(MovedGameState, T, FinalGameState).
-
+%unused. coisas pra a heuristica. não usando, apaga-se (daqui, mais 120 linhas)
 % Choosing Heuristic
 rotation_value(GameState, SortedResult, TotalBenefit) :-
     [Board, Mod, Dif, Player, Piece, CFB, CFP, WB, WP, Type] = GameState,
@@ -247,8 +232,8 @@ rotation_value(GameState, SortedResult, TotalBenefit) :-
     remove_duplicates(Ys, YSet),
     findall((RowIndex, NewBoard), 
         (member(RowIndex, XSet), spin_row(RowIndex, Board, NewBoard)), SpunRows),
-    findall((ColChar, NewBoard), 
-        (member(ColIndex, YSet), column_index(ColChar, ColIndex), spin_column(ColIndex, Board, NewBoard)), SpunCols),
+    findall((ColIndex, NewBoard), 
+        (member(ColIndex, YSet), spin_column(ColIndex, Board, NewBoard)), SpunCols),
     append(SpunRows, SpunCols, AllSpunBoards),
     findall((Index, ValidMoves), 
         (member((Index, Board), AllSpunBoards), valid_moves(Board, ValidMoves)), 
@@ -315,168 +300,63 @@ pack_results([(Index, Moves, PlayerScoreMoves) | PlayerTail],
                 [(Index, Moves, PlayerScoreMoves, OpponentScoreMoves) | ResultTail]) :-
    pack_results(PlayerTail, OpponentTail, ResultTail).
 
-% Global heuristic for evaluation
+% Global heuristic functions focusing on piece placement priority
 value(GameState, Player, Value) :-
-    get_score(Player, GameState, PlScore), !,
-    Opponent = opponent(Player),
-    get_score(Opponent, GameState, OpoScore), !,
-    rotation_value(GameState, _, TotalBenefit),
-    RValue is TotalBenefit,
-    Value is (0.6 * (PlScore - OpoScore) + 0.4 * RValue).  
-
-% --- Minimax with Sequential Move Evaluation After Rotation --- 
-
-minimax(GameState, 2, Player, BestMove, BestValue) :-
-    rotation_value(GameState, SortedResult, _TotalBenefit), 
-    \+(member(_,SortedResult)), 
-    evaluate_rotations([(0, [])], GameState, 2, Player, -inf, (BestMove, BestValue)), write('here\n').
-
-minimax(GameState, 0, Player, _, Value) :-
-    value(GameState, Player, Value).
-
-% --- Evaluate Rotations --- 
-
-evaluate_rotations([], _, _, _, BestSoFar, BestSoFar).
-evaluate_rotations([(0, [])], GameState, Depth, Player, BestSoFar, Best) :-
-    [Board | _] = GameState,
-    spin(0, Board, NewBoard, Success), Success == 1,
-    replace_board(GameState, NewBoard, RotatedGameState), 
-    evaluate_sequential_moves([0], RotatedGameState, Depth, Player, 0, BestSoFar, NewBest),
-    evaluate_rotations([], GameState, Depth, Player, NewBest, Best).
-evaluate_rotations([(SpinIndex, Moves) | Rotations], GameState, Depth, Player, BestSoFar, Best) :-
-    [Board | _] = GameState,
-    spin(SpinIndex, Board, NewBoard, Success), Success == 1,
-    replace_board(GameState, NewBoard, RotatedGameState),
-    evaluate_sequential_moves(Moves, RotatedGameState, Depth, Player, SpinIndex, BestSoFar, NewBest),
-    evaluate_rotations(Rotations, GameState, Depth, Player, NewBest, Best).
-
-
-% --- Evaluate Sequential Moves (with Off-board Pieces Priority) --- 
-
-evaluate_sequential_moves([], _, _, _, _, BestSoFar, BestSoFar).
-evaluate_sequential_moves([0 | Moves], GameState, Depth, Player, SpinIndex, BestSoFar, Best) :-    
+    % Get scores
+    get_score(Player, GameState, PlScore),
+    opponent(Player, Opponent),
+    get_score(Opponent, GameState, OpoScore),
     
-    get_piece_coordinates(GameState, PlayerPieceCoordinates),
-    member((0, 0), PlayerPieceCoordinates),!,  % Cut here to prevent other clauses from being checked
-    select_piece_off_board(GameState, Move, PieceGameState),
-    write('off board move\n'),
-    move(PieceGameState, Move, NewGameState),
-    NewDepth is Depth - 1,
-    minimax(NewGameState, NewDepth, Player, _, OpponentValue),
-    Value is -OpponentValue,
-    update_best_move(Value, BestSoFar, (SpinIndex, [Move]), NewBest),
-    write('newbestie: '), print(NewBest), nl,
-    evaluate_sequential_moves(Moves, NewGameState, Depth, Player, SpinIndex, NewBest, Best).
-/*
-% If no piece is off the board, proceed with regular move evaluation
-evaluate_sequential_moves([Move | Moves], GameState, Depth, Player, SpinIndex, BestSoFar, Best) :-
-    valid_moves(GameState, ValidMoves),
-    select_best_move(GameState, ValidMoves, Move),
-    [Board,_,_,Player| _] = GameState,
-    select_w(GameState, W),
-    get_x_y(Piece, Player, W),
-    move(GameState, Move, NewGameState),
-    NewDepth is Depth - 1,
-    minimax(NewGameState, NewDepth, Player, _, OpponentValue),
-    Value is -OpponentValue,
-    update_best_move(Value, BestSoFar, (SpinIndex, [Move]), NewBest),
-    evaluate_sequential_moves(Moves, NewGameState, Depth, Player, SpinIndex, NewBest, Best).
-*/
-
-% --- Select Piece Off the Board --- 
-
-select_piece_off_board(GameState, Move, PieceGameState) :-
-    [Board,_,_,Player| _] = GameState,
-    select_w(GameState, W),
-    get_waiting_pieces(Pieces, Player, W),
-    reverse(Pieces, ReversedPieces),
-    [Piece | _] = ReversedPieces,
-    replace_current_piece_waiting_pieces(GameState, ReversedPieces, Piece, PieceGameState),
-    valid_moves_piece(0, 0, Player, Board, ValidMoves),
-    random_member(Move, ValidMoves).% Select the best move for the off-board piece
-
-
-% --- Select the Best Move from Valid Moves --- 
-
-select_best_move(GameState, ValidMoves, BestMove) :-
-    write('ValidMoves: '), print(ValidMoves), nl,
-    findall(
-        (Benefit, Move),
-        (
-            member(Move, ValidMoves),
-            evaluate_move(GameState, Move, Benefit)
-        ),
-        MovesWithBenefits
-    ),
-    keysort(MovesWithBenefits, SortedMoves),  % Sort by benefit 
-    write('MovesWBF: '), print(SortedMoves), nl,
-    write('SortedMoves: '), print(SortedMoves), nl,
-    reverse(SortedMoves, DescendingSortedMoves),  % Reverse the order to get the highest benefit first
-    [(_BestBenefit, BestMove)] = DescendingSortedMoves.  % Select the move with the highest benefit.
-
-evaluate_move(GameState, Move, Benefit) :-
-    move(GameState, Move, NewGameState),
-    [_, _, _, Player | _] = NewGameState,
-    value(NewGameState, Player, Benefit).  % Calculate the benefit of each move.
-
-% --- Check if Coordinates are Empty or Generate Random Move --- 
-
-is_empty_or_random(GameState, X, Y, [], [], Move) :-
-    X == [0], Y == [0], !,
-    valid_moves(GameState, AllValidMoves),
-    select_best_move(GameState, AllValidMoves, Move).  % Select the best move instead of random.
-is_empty_or_random(_, X, Y, X, Y, []).  % Normal behavior if coordinates are not empty.
-
-/*
-
-%global heuristic
-average_benefit_for_player_and_opponent(Result, AvgPlayerBenefit, AvgOpponentBenefit) :-
-    findall(PlayerBenefit,
-        (
-            member((_Index, _Moves, PlayerScoreMoves, OpponentScoreMoves), Result),
-            compare_rotation_benefits(PlayerScoreMoves, [], OpponentScoreMoves, [], PlayerBenefit)
-        ),
-        PlayerBenefits),
-    findall(OpponentBenefit,
-        (
-            member((_Index, _Moves, PlayerScoreMoves, OpponentScoreMoves), Result),
-            compare_rotation_benefits(OpponentScoreMoves, [], PlayerScoreMoves, [], OpponentBenefit)
-        ),
-        OpponentBenefits),
-    sum_list(PlayerBenefits, TotalPlayerBenefit),
-    sum_list(OpponentBenefits, TotalOpponentBenefit),
-    length(PlayerBenefits, Count),
-    AvgPlayerBenefit is TotalPlayerBenefit / Count,
-    AvgOpponentBenefit is TotalOpponentBenefit / Count.
-count_moves_for_player_and_opponent(Result, TotalPlayerMoves, TotalOpponentMoves) :-
-    findall(PlayerMoves,
-        (
-            member((_Index, Moves, _PlayerScoreMoves, _OpponentScoreMoves), Result),
-            length(Moves, PlayerMoves)
-        ),
-        PlayerMovesList),
-    findall(OpponentMoves,
-        (
-            member((_Index, Moves, _PlayerScoreMoves, _OpponentScoreMoves), Result),
-            length(Moves, OpponentMoves)
-        ),
-        OpponentMovesList),
-    sum_list(PlayerMovesList, TotalPlayerMoves),
-    sum_list(OpponentMovesList, TotalOpponentMoves).
-net_score_opportunities(Result, PlayerScoreDelta, OpponentScoreDelta) :-
-    findall(PlayerScore,
-        (
-            member((_Index, _Moves, PlayerScoreMoves, _OpponentScoreMoves), Result),
-            length(PlayerScoreMoves, PlayerScore)
-        ),
-        PlayerScores),
-    findall(OpponentScore,
-        (
-            member((_Index, _Moves, _PlayerScoreMoves, OpponentScoreMoves), Result),
-            length(OpponentScoreMoves, OpponentScore)
-        ),
-        OpponentScores),
-    sum_list(PlayerScores, TotalPlayerScore),
-    sum_list(OpponentScores, TotalOpponentScore),
-    PlayerScoreDelta is TotalPlayerScore,
-    OpponentScoreDelta is TotalOpponentScore.*/
+    % Get count of pieces still waiting to be placed
+    select_w(GameState, Player, PlWaiting),
+    select_w(GameState, Opponent, OpWaiting),
+    
+    % Calculate placement priority value
+    PlacementValue is (5 - PlWaiting) * 2,  % More value for fewer waiting pieces
+    OppPlacementValue is (5 - OpWaiting) * 2,
+    write('entering rot val\n'),
+    % Calculate rotation benefit
+    rotation_value(GameState, _, RotationBenefit),
+    
+    % Weighted combination of factors
+    Value is (0.4 * (PlScore - OpoScore) + 
+              0.4 * (PlacementValue - OppPlacementValue) +
+              0.2 * RotationBenefit).
+%acaba aqui as coisas para a heurística
+random_moves(GameState, Moves, NewGameState) :-
+    [Board | _] = GameState,
+    display_game(GameState),
+    spin(0, Board, SavedBoard, Success),
+    write('Spinned!\n'),
+    Success == 1,
+    replace_board(GameState, SavedBoard, SpunGameState),
+    display_game(SpunGameState),
+    random_move(SpunGameState, Move1, GameState1),!,
+    random_move(GameState1, Move2, GameState2), !,
+    random_move(GameState2, Move3, MovedGameState),!,
+    replace_board(MovedGameState, Board, NewGameState),
+    Moves = [Move1, Move2, Move3].
+random_move(GameState, Move, NewGameState) :-
+    [_, _, _, Player | _] = GameState,
+    select_w(GameState, Player, W), W > 0,
+    findall(Piece, (between(1, W, X), get_piece(Player, X, Piece)), ListOfPieces), !,
+    last(ListOfPieces, Piece),
+    [Board, _, _, Player | _] = GameState,
+    valid_moves_piece(0, 0, Player, Board, Moves), 
+    random_member(RandomMove, Moves),
+    RandomMove = (X, Y),
+    Move = (Piece, X, Y),
+    replace_current_piece_waiting_pieces(GameState, NewW, Piece, PieceGameState),
+    NewW is W - 1,
+    move(PieceGameState, RandomMove, NewGameState),
+    write('Random move chosen: '), print(Move), nl.
+random_move(GameState, Move, NewGameState) :-
+    [_, _, _, Player | _] = GameState,
+    select_w(GameState, Player, W), W=0,
+    %either W = 0 or valid_moves_piece(0, 0, Player, Board, Moves), 
+    valid_moves(GameState, Moves),
+    random_member(Move, Moves),
+    Move = (P, X, Y), M = (X, Y),
+    replace_current_piece_waiting_pieces(GameState, W, P, PieceGameState),
+    move(PieceGameState, M, NewGameState),
+    write('Random move chosen: '), print(Move), !.

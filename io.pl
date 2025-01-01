@@ -81,14 +81,15 @@ spin(Input, _Board, _NewBoard, Success) :-
 
 %returns piece and its xy
 choose_piece(GameState, NewGameState, Piece, (X, Y)) :-
-    [Board, _, _, Player, _, _, _, WB, WP, _] = GameState,
-    choose_piece(Player, WB, WP, NewW, Piece),
+    [Board, _, _, Player, _, _,_, WB, WP, _] = GameState,
+    select_cs(GameState, CS),
+    choose_piece(Player, WB, WP, NewW, Piece, CS),
     get_x_y(Piece, X, Y, Board),
     format('Piece is in x: ~w, y: ~w\n', [X, Y]),
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, NewGameState).
 
-choose_piece(pink, _, WP, NewW, Piece) :-
-    get_waiting_pieces(Pieces, pink, WP), !,
+choose_piece(pink, _, WP, NewW, Piece, CSP) :-
+    get_waiting_pieces(Pieces, pink, WP, CSP), !,
     repeat,
     format_color(pink),
     write(', what piece do you want to move? (Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
@@ -99,8 +100,8 @@ choose_piece(pink, _, WP, NewW, Piece) :-
     update_waiting_pieces(Input, WP, NewW),
     get_piece(pink, Input, Piece), !.
 
-choose_piece(blue, WB, _, NewW, Piece) :-
-    get_waiting_pieces(Pieces, blue, WB), !,
+choose_piece(blue, WB, _, NewW, Piece,CSB) :-
+    get_waiting_pieces(Pieces, blue, WB, CSB), !,
     repeat,
     format_color(blue),
     write(', what piece do you want to move? (Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),

@@ -8,7 +8,7 @@ player_n(2, Color) :- Color = pink.
 piece_values(pink, N) :- between(0, 4, N).
 piece_values(blue, N) :- between(5, 9, N).
 
-column_index(0, 0) :- !.
+column_index('0', 0) :- !.
 column_index('a', 1).
 column_index('b', 2).
 column_index('c', 3).
@@ -21,6 +21,25 @@ select_w(GameState, W):-
 select_w(GameState, W):-
     [_, _, _, pink, _, _, _, _, WP, _] = GameState,
     W = WP.
+select_w(GameState, blue, W):-
+    [_, _, _, _, _, _, _, WB,_, _] = GameState,
+    W = WB.
+select_w(GameState, pink, W):-
+    [_, _, _, _, _, _, _, _, WP, _] = GameState,
+    W = WP.
+
+select_cs(GameState, CS):-
+    [_, _, _, blue, _, CSB, _, _,_, _] = GameState,
+    CS = CSB.
+select_cs(GameState, CS):-
+    [_, _, _, pink, _,  _,CSP, _,_, _] = GameState,
+    CS = CSP.
+select_cs(GameState, blue, CS):-
+    [_, _, _, _,CSB, _, _,_, _] = GameState,
+    CS = CSB.
+select_cs(GameState, pink, CS):-
+    [_, _, _, _, _,  _,CSP, _,_, _] = GameState,
+    CS = CSP.
 can_move_to(blue, '*') :- !.
 can_move_to(_, '-') :- !.
 can_move_to(pink, '+') :- !.
@@ -31,10 +50,12 @@ unpack_coordinates([(X, Y) | Rest], [X | Xs], [Y | Ys]) :-
 valid_coordinate((X, Y)) :-
     (X, Y) \= (0, 0).
 %getters
-get_waiting_pieces(ListOfPieces, blue, WB) :-
-    findall(X, (between(WB, 5, X)), ListOfPieces), !.
-get_waiting_pieces(ListOfPieces, pink, WP) :-
-    findall(X, (between(WP, 5, X)), ListOfPieces), !.
+get_waiting_pieces(ListOfPieces, blue, WB, CSB) :-
+    max(WB, 1, Min),
+    findall(X, (between(Min, 5, X), \+ member(X, CSB)), ListOfPieces), !.
+get_waiting_pieces(ListOfPieces, pink, WP, CSP) :-
+    max(WP, 1, Min),
+    findall(X, (between(Min, 5, X), \+ member(X, CSP)), ListOfPieces), !.
 
 get_piece(pink, Input, Piece) :-
     Piece is Input - 1.
@@ -51,7 +72,7 @@ get_x_y(_Piece, X, Y, _B) :-
 get_piece_coordinates(GameState, PieceCoordinates) :-
     [Board, _, _, pink, _, _, CSP, _, _, _] = GameState,
     findall(Piece, (between(1, 5, Piece), \+ member(Piece, CSP)), Pieces),
-    findall((X, Y), (member(Piece, Pieces), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
+    findall((Piece,X, Y), (member(Piece, Pieces), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
 
 % Predicate to get piece coordinates for blue player, excluding pieces in CSB
 get_piece_coordinates(GameState, PieceCoordinates) :-
@@ -179,7 +200,7 @@ is_score_point(blue, (X, Y)) :-
     ScoringPos = [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)],
     member((X, Y), ScoringPos), !.
 
-switch_turn([Board, 2, Dif, pink, _, CSb, CSp, WB, WP, bot], [Board, 2, Dif, blue, -1, CSb, CSp, WB, WP,human]).
+switch_turn([Board, 2, Dif, pink, _, CSb, CSp, WB, WP, bot], [Board, 2, Dif, blue, -1, CSb, CSp, WB, WP, human]).
 switch_turn([Board, 2, Dif, blue, _, CSb, CSp, WB, WP, human], [Board, 2, Dif, pink, -1, CSb, CSp, WB, WP, bot]).
 
 switch_turn([Board, Mode, Dif, pink, _, CSb, CSp, WB, WP, Type], [Board, Mode, Dif, blue, -1, CSb, CSp, WB, WP, Type]).
