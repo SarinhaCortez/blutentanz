@@ -57,7 +57,7 @@ choose_spin(GameState, NewGameState) :-
     format_color(Player),
     write(', choose a row (1-4) or column (A-D) to spin (Input your choice, then press ENTER, . ,ENTER): '),
     catch(read(Input), _, fail),
-    process_spin_input(Input, Board, NewBoard, Success),
+    spin(Input, Board, NewBoard, Success),
     Success == 1,
     replace_board(GameState, NewBoard, NewGameState), !.
 

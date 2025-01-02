@@ -119,10 +119,7 @@ replace_nth([H|T], N, Elem, [H|NewT]) :-
     replace_nth(T, N1, Elem, NewT).
 
 spin_square([A, B, C, D], [C, A, D, B]) :- !.
-spin_row(0, Board, NewBoard) :- 
-    random(1, 4, Index),
-    random_member(SpinType, [spin_row, spin_column]),
-    call(SpinType, Index, Board, NewBoard), !.
+
 spin_row(Row, Board, NewBoard) :-
     Start is 4 * (Row - 1) + 1,
     End is 4 * Row,

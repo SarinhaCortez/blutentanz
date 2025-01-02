@@ -189,16 +189,148 @@ call_construct_and_move(_N, GameState, GameState) :-
     [_, _, _, Player | _] = GameState,
     has_no_moves(Moves), 
     format_color(Player), write(' ran out of possible moves. Switching turn.\n'),!.
-%unused
+
+
+% HEURISTIC START
+
 minimax_and_move(GameState, FinalGameState) :-
-    [Board, _, _, Player | _] = GameState,
-    minimax(GameState, 2, Player, BestMove, _),
-    BestMove = (Spin, Moves),
-    format('Move chosen: ~w~n', [BestMove]),
-    spin(Spin, Board, NewBoard, Success),
-    Success == 1,
-    replace_board(GameState, NewBoard, SpunGameState),
-    call_move(SpunGameState, Moves, FinalGameState), !.
+    [Board, _, _, Player | _] = GameState,             % Extract board and player from the game state
+    minimax(GameState, 2, Player, BestMove, -inf, inf, BestValue, []), % Run minimax with cycle detection
+    BestMove = (Spin, Moves),                          % Extract the best move (Spin and Moves)
+    format('Move chosen: ~w~n', [BestMove]),            % Display the chosen move for debugging
+    spin(Spin, Board, NewBoard, Success),              % Perform the spin based on the Spin value
+    Success == 1,                                      % Ensure the spin is successful
+    replace_board(GameState, NewBoard, SpunGameState),  % Replace the board in the game state with the spun one
+    call_move(SpunGameState, Moves, FinalGameState),   % Apply the move to the game state and get FinalGameState
+    !.
+
+% Base case: When depth is 0, evaluate the state.
+minimax(GameState, 0, Player, null, Alpha, Beta, Value, _) :-
+    value(GameState, Player, Value).
+
+% Terminal state handling for game over
+minimax(GameState, Depth, Player, null, Alpha, Beta, Value, VisitedStates) :-
+    game_over(GameState, Winner),
+    evaluate_game_over(Winner, Player, Value).
+
+% General case for max player (maximize)
+minimax(GameState, Depth, Player, BestMove, Alpha, Beta, BestValue, VisitedStates) :-
+    Depth > 0,
+    player_role(Player, max_player),
+    findall(Move, valid_moves(GameState, Move), Moves),
+    maximize(GameState, Moves, Depth, Player, Alpha, Beta, BestMove, BestValue, VisitedStates).
+
+% General case for min player (minimize)
+minimax(GameState, Depth, Player, BestMove, Alpha, Beta, BestValue, VisitedStates) :-
+    Depth > 0,
+    player_role(Player, min_player),
+    findall(Move, valid_moves(GameState, Move), Moves),
+    minimize(GameState, Moves, Depth, Player, Alpha, Beta, BestMove, BestValue, VisitedStates).
+
+% Evaluate the outcome of the game based on the winner
+evaluate_game_over('draw', _, 0).    % Draw results in 0
+evaluate_game_over(Player, Player, 1000). % Player wins results in 1000
+evaluate_game_over(_, _, -1000).    % Opponent wins results in -1000
+
+% Maximization logic with random move selection for equal benefits
+maximize(_, [], _, _, Alpha, _, null, Alpha, _). % No moves left
+maximize(GameState, [Move | Moves], Depth, Player, Alpha, Beta, BestMove, BestValue, VisitedStates) :-
+    call_move(GameState, [Move], NewGameState),
+    (member(NewGameState, VisitedStates) ->  % Cycle detection
+        BestMove = null,
+        BestValue = Alpha
+    ;
+        NewDepth is Depth - 1,
+        opponent(Player, Opponent),
+        minimax(NewGameState, NewDepth, Opponent, _, Alpha, Beta, Value, [NewGameState | VisitedStates]),
+        update_max(Alpha, Value, Move, Beta, NewAlpha, BestCurrentMove),
+        prune_max(GameState, Moves, Depth, Player, NewAlpha, Beta, BestCurrentMove, BestValue, BestMove, [NewGameState | VisitedStates])
+    ).
+
+% Updated update_max to track multiple moves with the same value
+update_max(Alpha, Value, Move, Beta, NewAlpha, BestMove) :-
+    Value > Alpha,
+    NewAlpha = Value,
+    BestMove = Move.
+
+update_max(Alpha, Value, Move, Beta, NewAlpha, BestMove) :-
+    Value =< Alpha,
+    NewAlpha = Alpha,
+    BestMove = null.
+
+% Minimization logic with random move selection for equal benefits
+minimize(_, [], _, _, _, Beta, null, Beta, _). % No moves left
+minimize(GameState, [Move | Moves], Depth, Player, Alpha, Beta, BestMove, BestValue, VisitedStates) :-
+    call_move(GameState, [Move], NewGameState),
+    (member(NewGameState, VisitedStates) ->  % Cycle detection
+        BestMove = null,
+        BestValue = Beta
+    ;
+        NewDepth is Depth - 1,
+        opponent(Player, Opponent),
+        minimax(NewGameState, NewDepth, Opponent, _, Alpha, Beta, Value, [NewGameState | VisitedStates]),
+        update_min(Beta, Value, Move, Alpha, NewBeta, BestCurrentMove),
+        prune_min(GameState, Moves, Depth, Player, Alpha, NewBeta, BestCurrentMove, BestValue, BestMove, [NewGameState | VisitedStates])
+    ).
+
+% Updated update_min to track multiple moves with the same value
+update_min(Beta, Value, Move, Alpha, NewBeta, BestMove) :-
+    Value < Beta,
+    NewBeta = Value,
+    BestMove = Move.
+
+update_min(Beta, Value, Move, Alpha, NewBeta, BestMove) :-
+    Value >= Beta,
+    NewBeta = Beta,
+    BestMove = null.
+
+% Handle multiple best moves and choose randomly
+random_pick_best_move(Moves, BestMove) :-
+    random_member(BestMove, Moves).
+
+% No more moves, so return the best current move
+prune_min(_, [], _, _, Alpha, Beta, BestCurrentMove, Beta, BestCurrentMove, _).
+
+% Process the moves, and update the best value accordingly
+prune_min(GameState, Moves, Depth, Player, Alpha, Beta, BestCurrentMove, BestValue, BestMove, VisitedStates) :-
+    minimize(GameState, Moves, Depth, Player, Alpha, Beta, RemainingBestMove, RemainingBestValue, VisitedStates),
+    (RemainingBestValue < Beta ->  % Update if a better value is found
+        BestMove = RemainingBestMove,
+        BestValue = RemainingBestValue
+    ;
+        BestMove = BestCurrentMove,
+        BestValue = Beta
+    ),
+    % If there are multiple equally good moves, choose randomly
+    findall(Move, (member(Move, Moves), minimax(GameState, Depth, Player, Move, Alpha, Beta, Value, VisitedStates), Value = BestValue), BestMoves),
+    length(BestMoves, Count),
+    (Count > 1 -> random_pick_best_move(BestMoves, BestMove) ; true).
+
+% No more moves, so return the best current move
+prune_max(_, [], _, _, Alpha, Beta, BestCurrentMove, Alpha, BestCurrentMove, _).
+
+% Process the moves, and update the best value accordingly
+prune_max(GameState, Moves, Depth, Player, Alpha, Beta, BestCurrentMove, BestValue, BestMove, VisitedStates) :-
+    maximize(GameState, Moves, Depth, Player, Alpha, Beta, RemainingBestMove, RemainingBestValue, VisitedStates),
+    (RemainingBestValue > Alpha ->  % Update if a better value is found
+        BestMove = RemainingBestMove,
+        BestValue = RemainingBestValue
+    ;
+        BestMove = BestCurrentMove,
+        BestValue = Alpha
+    ),
+    % If there are multiple equally good moves, choose randomly
+    findall(Move, (member(Move, Moves), minimax(GameState, Depth, Player, Move, Alpha, Beta, Value, VisitedStates), Value = BestValue), BestMoves),
+    length(BestMoves, Count),
+    (Count > 1 -> random_pick_best_move(BestMoves, BestMove) ; true).
+
+evaluate_rotations([], _, _, _, BestValue, (null, BestValue)). % No rotations left.
+evaluate_rotations([H | T], GameState, Depth, Player, Alpha, (BestMove, BestValue)) :-
+    spin(H, Board, NewBoard),
+    replace_board(GameState, NewBoard, RotatedGameState),
+    NewDepth is Depth - 1,
+    minimax(RotatedGameState, NewDepth, Player, _, Value),
+    update_best(H, Value, Alpha, T, (BestMove, BestValue)).
 
 call_move(GameState, [], FinalGameState) :-
     FinalGameState = GameState, !.
@@ -322,6 +454,10 @@ value(GameState, Player, Value) :-
     Value is (0.4 * (PlScore - OpoScore) + 
               0.4 * (PlacementValue - OppPlacementValue) +
               0.2 * RotationBenefit).
+
+player_role(blue, max_player).
+player_role(pink, min_player).
+
 %acaba aqui as coisas para a heurística
 random_moves(GameState, Moves, NewGameState) :-
     [Board, _, _, Player | _] = GameState,
