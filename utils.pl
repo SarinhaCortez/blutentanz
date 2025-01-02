@@ -181,7 +181,7 @@ update_score(GameState, X, Y, NewGameState) :-
     [Board,_,_,Player |_] = GameState,
     is_score_point(Player, (X, Y)), !,
     clean_square(X, Y, Board, TempBoard),
-    format_color(Player), write('You won a score point!\n'),
+    format_color(Player), write(', you won a score point!\n'),
     replace_board(GameState, TempBoard, TempGameState), !,
     get_x_y(ScoredPiece, X, Y, Board),
     increase_score(TempGameState, ScoredPiece, NewGameState).

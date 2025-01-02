@@ -63,14 +63,14 @@ initial_state(GameConfig, GameState) :-
     GameState = [ShuffledBoard, Mode, Dif, Player, -1, [], [], 5, 5, human], !.
 % game over - blue won
 game_over(GameState, Winner) :-
-    [_, _, _, blue, _, CFb , _ , _ ,_]  = GameState,
+    [_, _, _, blue, _, CFb , _ , _, _ ,_]  = GameState,
     length(CFb, CSb),
-    CSb == 5, print('WPOOOOOON'), nl,
+    CSb == 5, 
     Winner = blue.
 
 % game over - pink won
 game_over(GameState, Winner) :-
-    [_, _, _, pink, _,  _ , CFp , _ ,_] = GameState,
+    [_, _, _, pink, _,  _ , CFp , _, _ ,_] = GameState,
     length(CFp, CSp),
     CSp == 5,
     Winner = pink.
