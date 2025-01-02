@@ -83,7 +83,7 @@ get_piece_coordinates(GameState, PieceCoordinates) :-
 get_piece_coordinates(GameState, PieceCoordinates) :-
     [Board, _, _, pink, _, _, CSP, _, _, _] = GameState,
     findall(Piece, (between(0, 4, Piece), \+ member(Piece, CSP)), Pieces),
-    findall((X, Y), (member(Piece, Pieces), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
+    findall((Piece, X, Y), (member(Piece, Pieces), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
 
 get_score(pink, GameState, Score) :- 
     [_, _, _, _, _, _, CFp | _] = GameState,

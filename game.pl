@@ -154,6 +154,7 @@ game_loop(GameState):-
     print_turn(GameState),
     random_moves(GameState, Moves, WGameState),!,
     call_move(WGameState, Moves, FinalGameState),
+    display_game(FinalGameState),
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
 clear_data :-
