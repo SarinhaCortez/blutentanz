@@ -343,7 +343,8 @@ random_moves(GameState, Moves, NewGameState) :-
 random_move(GameState, Move, NewGameState) :-
     [Board, _, _, Player | _] = GameState,
     select_w(GameState, Player, W), W > 0, 
-    valid_moves_piece(0, 0, Player, Board, Moves), write('has no...\n'),
+    valid_moves_piece(0, 0, Player, Board, Moves), 
+    write('has no...\n'),
     \+ has_no_moves(Moves),!,
     findall(Piece, (between(1, W, X), get_piece(Player, X, Piece)), ListOfPieces), !,
     last(ListOfPieces, Piece), 
@@ -361,7 +362,8 @@ random_move(GameState, Move, NewGameState) :-
     select_w(GameState, Player, W), 
     (W = 0; \+ valid_moves_piece(0, 0, Player, Board, Moves)), 
     write('W is '), print(W), nl,
-    valid_moves(GameState, Moves),write('has no...\n'),
+    valid_moves(GameState, Moves),
+    write('has no...\n'),
     \+ has_no_moves(Moves), !,
     random_member(Move, Moves),
     Move = (P, X, Y), M = (X, Y),
@@ -369,6 +371,12 @@ random_move(GameState, Move, NewGameState) :-
     write('This is moves'), print(Moves), nl,
     move(PieceGameState, M, NewGameState),
     write('Random move chosen: '), print(Move), nl, !.
+random_move(GameState, Move, NewGameState) :-
+    [Board, _, _, Player | _] = GameState,
+    valid_moves_piece(0, 0, Player, Board, Moves),
+    has_no_moves(Moves), !,
+    write('No moves left for '), format_color(Player), nl,
+    Move = (-1,0,0), NewGameState = GameState.
 random_move(GameState, Move, NewGameState) :-
     valid_moves(GameState, Moves),
     [_, _, _, Player | _] = GameState,
