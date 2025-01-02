@@ -328,10 +328,10 @@ value(GameState, Player, Value) :-
               0.2 * RotationBenefit).
 %acaba aqui as coisas para a heurística
 random_moves(GameState, Moves, NewGameState) :-
-    [Board | _] = GameState,
+    [Board, _, _, Player | _] = GameState,
     display_game(GameState),
     spin(0, Board, SpunBoard, Success),
-    write('Spinned!\n'),
+    format_color(Player), write('Spinned!\n'),
     Success == 1,
     replace_board(GameState, SpunBoard, SpunGameState),
     display_game(SpunGameState),
@@ -344,42 +344,32 @@ random_move(GameState, Move, NewGameState) :-
     [Board, _, _, Player | _] = GameState,
     select_w(GameState, Player, W), W > 0, 
     valid_moves_piece(0, 0, Player, Board, Moves), 
-    write('has no...\n'),
     \+ has_no_moves(Moves),!,
     findall(Piece, (between(1, W, X), get_piece(Player, X, Piece)), ListOfPieces), !,
     last(ListOfPieces, Piece), 
     random_member(RandomMove, Moves),
     RandomMove = (X, Y),
     Move = (Piece, X, Y), 
-    write('W is '), print(W), nl, 
     NewW is W - 1,
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, PieceGameState),
-    write('This is moves'), print(Moves), nl,
-    move(PieceGameState, RandomMove, NewGameState),
-    write('Random move chosen: '), print(Move), nl, !.
+    move(PieceGameState, RandomMove, NewGameState).
 random_move(GameState, Move, NewGameState) :-
     [Board, _, _, Player | _] = GameState,
     select_w(GameState, Player, W), 
     (W = 0; \+ valid_moves_piece(0, 0, Player, Board, Moves)), 
-    write('W is '), print(W), nl,
     valid_moves(GameState, Moves),
-    write('has no...\n'),
     \+ has_no_moves(Moves), !,
     random_member(Move, Moves),
     Move = (P, X, Y), M = (X, Y),
     replace_current_piece_waiting_pieces(GameState, W, P, PieceGameState),
-    write('This is moves'), print(Moves), nl,
-    move(PieceGameState, M, NewGameState),
-    write('Random move chosen: '), print(Move), nl, !.
+    move(PieceGameState, M, NewGameState).
 random_move(GameState, Move, NewGameState) :-
     [Board, _, _, Player | _] = GameState,
     valid_moves_piece(0, 0, Player, Board, Moves),
     has_no_moves(Moves), !,
-    write('No moves left for '), format_color(Player), nl,
     Move = (-1,0,0), NewGameState = GameState.
 random_move(GameState, Move, NewGameState) :-
     valid_moves(GameState, Moves),
     [_, _, _, Player | _] = GameState,
     has_no_moves(Moves), !,
-    write('No moves left for '), format_color(Player), nl,
     Move = (-1,0,0), NewGameState = GameState.
