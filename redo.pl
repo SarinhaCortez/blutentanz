@@ -225,7 +225,7 @@ evaluate_sequential_moves([Move | Moves], GameState, Depth, Player, SpinIndex, B
     valid_moves(GameState, ValidMoves),
     select_best_move(GameState, ValidMoves, Move),
     [Board,_,_,Player| _] = GameState,
-    select_w(GameState, W),
+    (GameState, W),
     get_x_y(Piece, Player, W),
     move(GameState, Move, NewGameState),
     NewDepth is Depth - 1,

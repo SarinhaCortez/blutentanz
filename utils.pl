@@ -1,4 +1,8 @@
 %game utils
+
+has_no_moves([]).
+has_no_moves(_) :- false.
+
 opponent(blue, Opponent) :- Opponent = pink.
 opponent(pink, Opponent) :- Opponent = blue.
 
@@ -43,6 +47,7 @@ select_cs(GameState, pink, CS):-
 can_move_to(blue, '*') :- !.
 can_move_to(_, '-') :- !.
 can_move_to(pink, '+') :- !.
+can_move_to(_, _) :- fail, !.
 
 unpack_coordinates([], [], []).
 unpack_coordinates([(X, Y) | Rest], [X | Xs], [Y | Ys]) :-
@@ -64,20 +69,20 @@ get_piece(blue, Input, Piece) :-
 
 get_x_y(Piece, X, Y, Board) :-
     nth1(Y, Board, Row),
-    nth1(X, Row, Piece).
+    nth1(X, Row, Piece), !.
 get_x_y(_Piece, X, Y, _B) :-
     X = 0, Y = 0.
 
-% Predicate to get piece coordinates for pink player, excluding pieces in CSP
-get_piece_coordinates(GameState, PieceCoordinates) :-
-    [Board, _, _, pink, _, _, CSP, _, _, _] = GameState,
-    findall(Piece, (between(1, 5, Piece), \+ member(Piece, CSP)), Pieces),
-    findall((Piece,X, Y), (member(Piece, Pieces), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
-
-% Predicate to get piece coordinates for blue player, excluding pieces in CSB
+% Predicate to get piece coordinates for BLUE player, excluding pieces in CSP
 get_piece_coordinates(GameState, PieceCoordinates) :-
     [Board, _, _, blue, _, CSB, _, _, _, _] = GameState,
-    findall(Piece, (between(1, 5, Piece), \+ member(Piece, CSB)), Pieces),
+    findall(Piece, (between(5, 9, Piece), \+ member(Piece, CSB)), Pieces),
+    findall((Piece, X, Y), (member(Piece, Pieces), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
+
+% Predicate to get piece coordinates for PINK player, excluding pieces in CSB
+get_piece_coordinates(GameState, PieceCoordinates) :-
+    [Board, _, _, pink, _, _, CSP, _, _, _] = GameState,
+    findall(Piece, (between(0, 4, Piece), \+ member(Piece, CSP)), Pieces),
     findall((X, Y), (member(Piece, Pieces), get_x_y(Piece, X, Y, Board)), PieceCoordinates).
 
 get_score(pink, GameState, Score) :- 
@@ -110,8 +115,6 @@ validate_move_input(Input, Col, Row) :-
     char_code(RowChar, Code),
     Row is Code - 48.
 is_valid_move(Player, Board, (X, Y)) :-
-    length(Board, Length),
-    Y > 0, Y =< Length,
     nth1(Y, Board, Row),
     nth1(X, Row, Char),
     can_move_to(Player, Char), !.
@@ -140,9 +143,9 @@ clean_square(0, 0, Board, TempBoard) :-
     write('Your piece is just starting!\n'), 
     TempBoard = Board, !.
 clean_square(X, Y, Board, TempBoard) :-
-    X>0, Y > 0,
-    nth1(Y, Board, Square),!,
-    nth1(SpaceX, Square, ' '),!,
+    X > 0, Y > 0, write('Cleaning square...\n'),
+    nth1(Y, Board, Square),!, write('Got square...\n'),
+    nth1(SpaceX, Square, ' '),!, write('Got space...\n'),
     get_symbol(SpaceX, X, Symbol), %gets the symbol to replace
     replace_in_square(Square, X, Symbol, NewSquare),!,
     replace_in_board(Board, Y, NewSquare, TempBoard).
@@ -174,14 +177,6 @@ get_symbol(2, X, Symbol) :- nth1(X, ['*', ' ', '-', '+'], Symbol), !.
 get_symbol(3, X, Symbol) :- nth1(X, ['+', '-', ' ', '*'], Symbol), !.
 get_symbol(4, X, Symbol) :- nth1(X, ['-', '*', '+', ' '], Symbol), !.
 
-%alter state
-increase_score([Board, Mode, Dif, pink, CurrentPiece, CFb, CFp, WB, WP, Type] ,ScoredPiece,[Board, Mode, Dif, pink, CurrentPiece, CFb, NewScore, WB, WP, Type]) :-
-    append(CFp, [ScoredPiece], Score),
-    remove_duplicates(Score, NewScore).
-increase_score([Board, Mode, Dif, blue, CurrentPiece, CFb, CFp, WB, WP, Type] ,ScoredPiece,[Board, Mode, Dif, blue, CurrentPiece, NewScore, CFp, WB, WP, Type]) :-
-    append(CFb, [ScoredPiece], Score),
-    remove_duplicates(Score, NewScore).
-
 update_score(GameState, X, Y, NewGameState) :-
     [Board,_,_,Player |_] = GameState,
     is_score_point(Player, (X, Y)), !,
@@ -192,7 +187,14 @@ update_score(GameState, X, Y, NewGameState) :-
     increase_score(TempGameState, ScoredPiece, NewGameState).
 update_score(GameState, _, _, NewGameState) :- 
     NewGameState = GameState.
-    
+%alter state
+increase_score([Board, Mode, Dif, pink, CurrentPiece, CFb, CFp, WB, WP, Type] ,ScoredPiece,[Board, Mode, Dif, pink, CurrentPiece, CFb, NewScore, WB, WP, Type]) :-
+    append(CFp, [ScoredPiece], Score),
+    remove_duplicates(Score, NewScore).
+increase_score([Board, Mode, Dif, blue, CurrentPiece, CFb, CFp, WB, WP, Type] ,ScoredPiece,[Board, Mode, Dif, blue, CurrentPiece, NewScore, CFp, WB, WP, Type]) :-
+    append(CFb, [ScoredPiece], Score),
+    remove_duplicates(Score, NewScore).
+  
 is_score_point(pink, (X, Y)) :-
     ScoringPos = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],
     member((X, Y), ScoringPos), !.
@@ -260,3 +262,6 @@ format_color(X) :-
 format_color(X) :- 
     print_in_color(white, X).      
 
+
+
+%clean square chumba pq get symbol não existe ºara o espaço

@@ -65,7 +65,7 @@ initial_state(GameConfig, GameState) :-
 game_over(GameState, Winner) :-
     [_, _, _, blue, _, CFb , _ , _ ,_]  = GameState,
     length(CFb, CSb),
-    CSb == 5,
+    CSb == 5, print('WPOOOOOON'), nl,
     Winner = blue.
 
 % game over - pink won
@@ -83,6 +83,7 @@ show_winner(Winner) :-
 
 valid_moves(GameState, ListOfMoves) :-
     get_piece_coordinates(GameState, PieceCoordinates),
+    write('Piece coordinates: '), print(PieceCoordinates), nl,
     [Board, _, _, Player | _] = GameState,
     findall((Piece, X, Y),
         (
@@ -126,7 +127,7 @@ game_loop(GameState):-
     game_over(GameState, Winner), !,
     display_game(GameState),
     show_winner(Winner).
-game_loop(GameState):-
+game_loop(GameState) :-
     [_, _, _, _, _, _, _, _, _, human] = GameState,
     write('Human turn\n'), nl,
     print_turn(GameState),
@@ -136,7 +137,7 @@ game_loop(GameState):-
     call_construct_and_move(3, SpunGameState, FinalGameState), !,
     print(FinalGameState), nl,
     switch_turn(FinalGameState, OtherPlayerGameState),
-    game_loop(OtherPlayerGameState), !.
+    game_loop(OtherPlayerGameState).
 game_loop(GameState):-
     print(GameState),nl,
     [_, _, 2, _, _, _, _, _, _, bot] = GameState, %dif2
@@ -146,32 +147,29 @@ game_loop(GameState):-
     minimax_and_move(GameState, FinalGameState),!,
     print(FinalGameState),nl,
     switch_turn(FinalGameState, OtherPlayerGameState),
-    game_loop(OtherPlayerGameState), !.
+    game_loop(OtherPlayerGameState).
 game_loop(GameState):-
     [_, _, 1, _, _, _, _, _, _, bot] = GameState, %dif1
     write('bot turn with random\n'), nl,
     print_turn(GameState),
     random_moves(GameState, Moves, WGameState),!,
     call_move(WGameState, Moves, FinalGameState),
-    display_game(FinalGameState),
-    print(FinalGameState),nl,
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
-
 clear_data :-
     retractall(board(_)).
 
 move(GameState, Move, NewGameState) :-
-    Move = (X, Y),
+    Move = (X, Y), write('Move is '), print(Move), nl, 
     [Board, _, _, _, CurrPiece | _] = GameState,
-    get_x_y(CurrPiece, Old_X, Old_Y, Board),!,
-    clean_square(Old_X, Old_Y, Board, TempBoard),!,
-    nth1(Y, TempBoard, Square), !,
+    get_x_y(CurrPiece, Old_X, Old_Y, Board),!, write('Old x is '), print(Old_X), write(' Old y is '), print(Old_Y), nl,
+    clean_square(Old_X, Old_Y, Board, TempBoard),!, write('cleaned square\n'),
+    nth1(Y, TempBoard, Square), !, write('got square\n'),
     replace_in_square(Square, X, CurrPiece, NewSquare), !,
     replace_in_board(TempBoard, Y, NewSquare, NewBoard),!,
     replace_board(GameState, NewBoard, TempState), 
     update_score(TempState, X, Y, NewGameState), 
-    write('exiting move\n'),!.
+    write('exiting move\n'), !.
 
 
 call_construct_and_move(0, GameState, GameState) :- !.
@@ -186,10 +184,10 @@ call_construct_and_move(N, GameState, FinalGameState) :-
     N1 is N - 1,
     call_construct_and_move(N1, MovedGameState, FinalGameState), !.
 call_construct_and_move(_N, GameState, GameState) :-
-    [_,_,_,Player |_] = GameState,
     valid_moves(GameState, Moves),
-    (\+ Moves), !, format_color(Player),
-    write(', you ran out of possible moves. Switching turn.\n'), !.
+    [_, _, _, Player | _] = GameState,
+    has_no_moves(Moves), 
+    format_color(Player), write(' ran out of possible moves. Switching turn.\n'),!.
 %unused
 minimax_and_move(GameState, FinalGameState) :-
     [Board, _, _, Player | _] = GameState,
@@ -203,14 +201,19 @@ minimax_and_move(GameState, FinalGameState) :-
 
 call_move(GameState, [], FinalGameState) :-
     write('base case!\n'),
-    FinalGameState = GameState.
+    FinalGameState = GameState, !.
+call_move(GameState, [(-1,0,0)|_], FinalGameState) :-
+    write('no moves\n'),
+    FinalGameState = GameState, !.
 call_move(GameState, [H|T], FinalGameState) :-
-    [_, _, _, Player | _] = GameState,
-    select_w(GameState, Player, W), W > 0,
+    select_w(GameState, W), W >= 0,
     H = (Piece, X, Y), Move = (X, Y),
     format('Piece: ~w, X: ~w, Y: ~w~n', [Piece, X, Y]),
     replace_current_piece_waiting_pieces(GameState, W, Piece, PieceGameState),
+    write('move in call move\n'),
+    print(PieceGameState), nl,
     move(PieceGameState, Move, MovedGameState),
+    display_game(MovedGameState),
     call_move(MovedGameState, T, FinalGameState).
 %unused. coisas pra a heuristica. não usando, apaga-se (daqui, mais 120 linhas)
 % Choosing Heuristic
@@ -326,37 +329,48 @@ value(GameState, Player, Value) :-
 random_moves(GameState, Moves, NewGameState) :-
     [Board | _] = GameState,
     display_game(GameState),
-    spin(0, Board, SavedBoard, Success),
+    spin(0, Board, SpunBoard, Success),
     write('Spinned!\n'),
     Success == 1,
-    replace_board(GameState, SavedBoard, SpunGameState),
+    replace_board(GameState, SpunBoard, SpunGameState),
     display_game(SpunGameState),
-    random_move(SpunGameState, Move1, GameState1),!,
+    random_move(SpunGameState, Move1, GameState1), !,
     random_move(GameState1, Move2, GameState2), !,
     random_move(GameState2, Move3, MovedGameState),!,
-    replace_board(MovedGameState, Board, NewGameState),
+    replace_board(MovedGameState, SpunBoard, NewGameState),
     Moves = [Move1, Move2, Move3].
 random_move(GameState, Move, NewGameState) :-
-    [_, _, _, Player | _] = GameState,
-    select_w(GameState, Player, W), W > 0,
-    findall(Piece, (between(1, W, X), get_piece(Player, X, Piece)), ListOfPieces), !,
-    last(ListOfPieces, Piece),
     [Board, _, _, Player | _] = GameState,
-    valid_moves_piece(0, 0, Player, Board, Moves), 
+    select_w(GameState, Player, W), W > 0, 
+    valid_moves_piece(0, 0, Player, Board, Moves), write('has no...\n'),
+    \+ has_no_moves(Moves),!,
+    findall(Piece, (between(1, W, X), get_piece(Player, X, Piece)), ListOfPieces), !,
+    last(ListOfPieces, Piece), 
     random_member(RandomMove, Moves),
     RandomMove = (X, Y),
-    Move = (Piece, X, Y),
-    replace_current_piece_waiting_pieces(GameState, NewW, Piece, PieceGameState),
+    Move = (Piece, X, Y), 
+    write('W is '), print(W), nl, 
     NewW is W - 1,
+    replace_current_piece_waiting_pieces(GameState, NewW, Piece, PieceGameState),
+    write('This is moves'), print(Moves), nl,
     move(PieceGameState, RandomMove, NewGameState),
-    write('Random move chosen: '), print(Move), nl.
+    write('Random move chosen: '), print(Move), nl, !.
 random_move(GameState, Move, NewGameState) :-
-    [_, _, _, Player | _] = GameState,
-    select_w(GameState, Player, W), W=0,
-    %either W = 0 or valid_moves_piece(0, 0, Player, Board, Moves), 
-    valid_moves(GameState, Moves),
+    [Board, _, _, Player | _] = GameState,
+    select_w(GameState, Player, W), 
+    (W = 0; \+ valid_moves_piece(0, 0, Player, Board, Moves)), 
+    write('W is '), print(W), nl,
+    valid_moves(GameState, Moves),write('has no...\n'),
+    \+ has_no_moves(Moves), !,
     random_member(Move, Moves),
     Move = (P, X, Y), M = (X, Y),
     replace_current_piece_waiting_pieces(GameState, W, P, PieceGameState),
+    write('This is moves'), print(Moves), nl,
     move(PieceGameState, M, NewGameState),
-    write('Random move chosen: '), print(Move), !.
+    write('Random move chosen: '), print(Move), nl, !.
+random_move(GameState, Move, NewGameState) :-
+    valid_moves(GameState, Moves),
+    [_, _, _, Player | _] = GameState,
+    has_no_moves(Moves), !,
+    write('No moves left for '), format_color(Player), nl,
+    Move = (-1,0,0), NewGameState = GameState.

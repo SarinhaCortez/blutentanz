@@ -74,7 +74,7 @@ spin(0, Board, NewBoard, Success) :-
     random(1, 4, Index),
     random_member(SpinType, [spin_row, spin_column]),
     call(SpinType, Index, Board, NewBoard),
-    Success = 1.
+    Success = 1, !.
 spin(Input, _Board, _NewBoard, Success) :-
     write('Invalid input. Please choose a row (1-4) or column (A-D) Input was'), print(Input), nl,
     Success = 0.
