@@ -50,7 +50,7 @@ validate_start_player(_,_) :-
     write('Invalid input. Please try again.\n'),
     fail.
 
-% Initial Spin IO
+% Initial  IO
 choose_spin(GameState, NewGameState) :-
     [Board, _, _, Player|_] = GameState,
     repeat,

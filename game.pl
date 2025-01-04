@@ -138,14 +138,14 @@ game_loop(GameState) :-
     call_construct_and_move(3, SpunGameState, FinalGameState), !,
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
-game_loop(GameState):-
-    print(GameState),nl,
-    [_, _, 2, _, _, _, _, _, _, bot] = GameState, %dif2
-    write('Bot turn, with minimax\n'), nl,
+game_loop(GameState) :-
+    [_, _, 2, _, _, _, _, _, _, bot] = GameState, % Difficulty 2
+    write('Bot turn, greedy algorithm\n'), nl,
     print_turn(GameState),
     display_game(GameState),
-    minimax_and_move(GameState, FinalGameState),!,
-    print(FinalGameState),nl,
+    greedy_move(GameState, Moves,  GreedyGameState),
+    call_move(GreedyGameState, Moves, FinalGameState),
+    display_game(FinalGameState),
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
 game_loop(GameState):-
@@ -193,136 +193,6 @@ call_construct_and_move(_N, GameState, GameState) :-
 
 % HEURISTIC START
 
-minimax_and_move(GameState, FinalGameState) :-
-    [Board, _, _, Player | _] = GameState,             % Extract board and player from the game state
-    minimax(GameState, 2, Player, BestMove, -inf, inf, BestValue, []), % Run minimax with cycle detection
-    BestMove = (Spin, Moves),                          % Extract the best move (Spin and Moves)
-    format('Move chosen: ~w~n', [BestMove]),            % Display the chosen move for debugging
-    spin(Spin, Board, NewBoard, Success),              % Perform the spin based on the Spin value
-    Success == 1,                                      % Ensure the spin is successful
-    replace_board(GameState, NewBoard, SpunGameState),  % Replace the board in the game state with the spun one
-    call_move(SpunGameState, Moves, FinalGameState),   % Apply the move to the game state and get FinalGameState
-    !.
-
-% Base case: When depth is 0, evaluate the state.
-minimax(GameState, 0, Player, null, Alpha, Beta, Value, _) :-
-    value(GameState, Player, Value).
-
-% Terminal state handling for game over
-minimax(GameState, Depth, Player, null, Alpha, Beta, Value, VisitedStates) :-
-    game_over(GameState, Winner),
-    evaluate_game_over(Winner, Player, Value).
-
-% General case for max player (maximize)
-minimax(GameState, Depth, Player, BestMove, Alpha, Beta, BestValue, VisitedStates) :-
-    Depth > 0,
-    player_role(Player, max_player),
-    findall(Move, valid_moves(GameState, Move), Moves),
-    maximize(GameState, Moves, Depth, Player, Alpha, Beta, BestMove, BestValue, VisitedStates).
-
-% General case for min player (minimize)
-minimax(GameState, Depth, Player, BestMove, Alpha, Beta, BestValue, VisitedStates) :-
-    Depth > 0,
-    player_role(Player, min_player),
-    findall(Move, valid_moves(GameState, Move), Moves),
-    minimize(GameState, Moves, Depth, Player, Alpha, Beta, BestMove, BestValue, VisitedStates).
-
-% Evaluate the outcome of the game based on the winner
-evaluate_game_over('draw', _, 0).    % Draw results in 0
-evaluate_game_over(Player, Player, 1000). % Player wins results in 1000
-evaluate_game_over(_, _, -1000).    % Opponent wins results in -1000
-
-% Maximization logic with random move selection for equal benefits
-maximize(_, [], _, _, Alpha, _, null, Alpha, _). % No moves left
-maximize(GameState, [Move | Moves], Depth, Player, Alpha, Beta, BestMove, BestValue, VisitedStates) :-
-    call_move(GameState, [Move], NewGameState),
-    (member(NewGameState, VisitedStates) ->  % Cycle detection
-        BestMove = null,
-        BestValue = Alpha
-    ;
-        NewDepth is Depth - 1,
-        opponent(Player, Opponent),
-        minimax(NewGameState, NewDepth, Opponent, _, Alpha, Beta, Value, [NewGameState | VisitedStates]),
-        update_max(Alpha, Value, Move, Beta, NewAlpha, BestCurrentMove),
-        prune_max(GameState, Moves, Depth, Player, NewAlpha, Beta, BestCurrentMove, BestValue, BestMove, [NewGameState | VisitedStates])
-    ).
-
-% Updated update_max to track multiple moves with the same value
-update_max(Alpha, Value, Move, Beta, NewAlpha, BestMove) :-
-    Value > Alpha,
-    NewAlpha = Value,
-    BestMove = Move.
-
-update_max(Alpha, Value, Move, Beta, NewAlpha, BestMove) :-
-    Value =< Alpha,
-    NewAlpha = Alpha,
-    BestMove = null.
-
-% Minimization logic with random move selection for equal benefits
-minimize(_, [], _, _, _, Beta, null, Beta, _). % No moves left
-minimize(GameState, [Move | Moves], Depth, Player, Alpha, Beta, BestMove, BestValue, VisitedStates) :-
-    call_move(GameState, [Move], NewGameState),
-    (member(NewGameState, VisitedStates) ->  % Cycle detection
-        BestMove = null,
-        BestValue = Beta
-    ;
-        NewDepth is Depth - 1,
-        opponent(Player, Opponent),
-        minimax(NewGameState, NewDepth, Opponent, _, Alpha, Beta, Value, [NewGameState | VisitedStates]),
-        update_min(Beta, Value, Move, Alpha, NewBeta, BestCurrentMove),
-        prune_min(GameState, Moves, Depth, Player, Alpha, NewBeta, BestCurrentMove, BestValue, BestMove, [NewGameState | VisitedStates])
-    ).
-
-% Updated update_min to track multiple moves with the same value
-update_min(Beta, Value, Move, Alpha, NewBeta, BestMove) :-
-    Value < Beta,
-    NewBeta = Value,
-    BestMove = Move.
-
-update_min(Beta, Value, Move, Alpha, NewBeta, BestMove) :-
-    Value >= Beta,
-    NewBeta = Beta,
-    BestMove = null.
-
-% Handle multiple best moves and choose randomly
-random_pick_best_move(Moves, BestMove) :-
-    random_member(BestMove, Moves).
-
-% No more moves, so return the best current move
-prune_min(_, [], _, _, Alpha, Beta, BestCurrentMove, Beta, BestCurrentMove, _).
-
-% Process the moves, and update the best value accordingly
-prune_min(GameState, Moves, Depth, Player, Alpha, Beta, BestCurrentMove, BestValue, BestMove, VisitedStates) :-
-    minimize(GameState, Moves, Depth, Player, Alpha, Beta, RemainingBestMove, RemainingBestValue, VisitedStates),
-    (RemainingBestValue < Beta ->  % Update if a better value is found
-        BestMove = RemainingBestMove,
-        BestValue = RemainingBestValue
-    ;
-        BestMove = BestCurrentMove,
-        BestValue = Beta
-    ),
-    % If there are multiple equally good moves, choose randomly
-    findall(Move, (member(Move, Moves), minimax(GameState, Depth, Player, Move, Alpha, Beta, Value, VisitedStates), Value = BestValue), BestMoves),
-    length(BestMoves, Count),
-    (Count > 1 -> random_pick_best_move(BestMoves, BestMove) ; true).
-
-% No more moves, so return the best current move
-prune_max(_, [], _, _, Alpha, Beta, BestCurrentMove, Alpha, BestCurrentMove, _).
-
-% Process the moves, and update the best value accordingly
-prune_max(GameState, Moves, Depth, Player, Alpha, Beta, BestCurrentMove, BestValue, BestMove, VisitedStates) :-
-    maximize(GameState, Moves, Depth, Player, Alpha, Beta, RemainingBestMove, RemainingBestValue, VisitedStates),
-    (RemainingBestValue > Alpha ->  % Update if a better value is found
-        BestMove = RemainingBestMove,
-        BestValue = RemainingBestValue
-    ;
-        BestMove = BestCurrentMove,
-        BestValue = Alpha
-    ),
-    % If there are multiple equally good moves, choose randomly
-    findall(Move, (member(Move, Moves), minimax(GameState, Depth, Player, Move, Alpha, Beta, Value, VisitedStates), Value = BestValue), BestMoves),
-    length(BestMoves, Count),
-    (Count > 1 -> random_pick_best_move(BestMoves, BestMove) ; true).
 
 evaluate_rotations([], _, _, _, BestValue, (null, BestValue)). % No rotations left.
 evaluate_rotations([H | T], GameState, Depth, Player, Alpha, (BestMove, BestValue)) :-
@@ -504,3 +374,156 @@ random_move(GameState, Move, NewGameState) :-
     valid_moves(GameState, Moves),
     has_no_moves(Moves), !,
     Move = (-1,0,0), NewGameState = GameState.
+
+%greedy
+
+% Define the greedy move that selects the best spin based on the criteria.
+greedy_move(GameState, Moves, FinalGameState) :-
+    % Retrieve the current board and player from the game state
+    GameState = [Board, _, _, Player, _, Csb, Csp, _, _, _], 
+    
+    % Generate all possible spins and evaluate them
+    Spins = [1,2,3,4,'a','b','c','d'],
+
+    % Evaluate all possible spins and find the best one
+    evaluate_spins(Spins, GameState , BestMove),
+
+    % Apply the best move to the board and update the game state
+    spin(BestMove, Board, SpunBoard, Success),
+
+    format_color(Player), write(' spinned!\n'),
+
+    Success == 1,
+
+    replace_board(GameState, SpunBoard, SpunGameState),
+
+    display_game(SpunGameState),
+
+    % Perform 3 greedy moves
+    greedy_move_piece(SpunGameState, Move1, GameState1), !,
+    greedy_move_piece(GameState1, Move2, GameState2), !,
+    greedy_move_piece(GameState2, Move3, MovedGameState), !,
+
+    replace_board(MovedGameState, SpunBoard, FinalGameState),
+
+    % Return all moves
+    Moves = [Move1, Move2, Move3].
+
+
+
+
+% Define a single greedy move
+greedy_move_piece(GameState, Move, NewGameState) :-
+    [Board, _, _, Player | _] = GameState,
+    valid_moves(GameState, Moves),
+    \+ has_no_moves(Moves), !,
+
+    % Evaluate each move to find the best one
+    findall(
+        (Piece, X, Y)-Score,
+        (
+            member((Piece, X, Y), Moves),
+            replace_current_piece_waiting_pieces(GameState, _, Piece, TempGameState),
+            move(TempGameState, (X, Y), TempResultGameState),
+            evaluate_move(GameState, TempResultGameState, Player, Score)
+        ),
+        MoveScores
+    ),
+    keysort(MoveScores, SortedMoveScores),
+    reverse(SortedMoveScores, [(BestMove-_)|_]),
+
+    % Extract the best move details
+    BestMove = (Piece, X, Y),
+    Move = (Piece, X, Y),
+
+    % Update GameState with the selected piece
+    select_w(GameState, Player, W),
+    NewW is W - 1,
+    replace_current_piece_waiting_pieces(GameState, NewW, Piece, UpdatedGameState),
+
+    % Apply the move
+    move(UpdatedGameState, (X, Y), NewGameState).
+
+% Evaluate a move based on how much it brings the piece closer to the edge
+evaluate_move(GameState, NewGameState, Player, Score) :-
+    get_piece_coordinates(GameState, CurrentPositions),
+    get_piece_coordinates(NewGameState, NewPositions),
+    count_closer_positions(CurrentPositions, NewPositions, Player, Score).
+
+
+
+% Evaluate all possible spins
+evaluate_spins(Spins, GameState , BestMove) :-
+
+    GameState = [Board, _, _, Player, _, Csb, Csp | _], 
+    % For each spin, evaluate the three criteria and assign a score
+    findall(
+        Spin-Score,
+        (
+            member(Spin, Spins),
+            spin(Spin, Board, NewBoard, _),
+            NewGameState = [NewBoard, _,_, Player, _, Csb, Csp | _],
+            evaluate_spin(Spin, GameState, NewGameState, Score)
+        ),
+        SpinScores
+    ),
+    
+    % Sort by score in descending order to prioritize best moves
+    keysort(SpinScores, SortedScores),
+    
+    % Take the first element in the sorted list as the best move
+    SortedScores = [BestMove-_|_].
+
+
+% Evaluate a single spin based on three criteria
+evaluate_spin(Spin, GameState, NewGameState, Score) :-
+    % Calculate how much the spin moves the player's pieces closer to the edge
+    closer_to_edge(GameState, NewGameState, EdgeMoveScore),
+    
+    % Calculate the number of valid moves for the current player and the opponent
+    valid_moves(GameState, PlayerMovesBefore),
+    opponent(Player, Opponent),
+    valid_moves(GameState, OpponentMovesBefore),
+    
+    % Get the current state after the spin
+    valid_moves(NewGameState, PlayerMovesAfter),
+    valid_moves(NewGameState, OpponentMovesAfter),
+
+    length(PlayerMovesBefore, PMBcount),
+    length(PlayerMovesAfter, PMAcount),
+    length(OpponentMovesBefore, OMBcount),
+    length(OpponentMovesAfter, OMAcount),
+    
+    % Calculate the increase in valid moves for the player
+    IncreasePlayerMoves is PMAcount - PMBcount,
+    
+    % Calculate the decrease in valid moves for the opponent
+    DecreaseOpponentMoves is OMBcount - OMAcount,
+    
+    % Combine all criteria to generate a final score
+    Score is EdgeMoveScore + IncreasePlayerMoves + DecreaseOpponentMoves.
+
+% Calculate how much the spin moves the current player's pieces closer to the edge
+closer_to_edge(GameState, NewGameState, Score) :-
+    % Get current and new piece positions
+    get_piece_coordinates(GameState, CurrentPositions),
+    get_piece_coordinates(NewGameState, NewPositions),
+    
+    % Count how many pieces have moved closer to the target edge
+    count_closer_positions(CurrentPositions, NewPositions, Player, Score).
+
+% Count the number of pieces that moved closer to the target edge
+count_closer_positions(CurrentPositions, NewPositions, Player, Score) :-
+    findall(1, (member((Piece, X1, Y1), CurrentPositions), 
+                member((Piece, X2, Y2), NewPositions),
+                moved_closer_to_edge(Player, Y1, Y2)), 
+            CloserPieces),
+    length(CloserPieces, Score).
+
+% Helper to determine if a piece has moved closer to the target edge
+moved_closer_to_edge(blue, Y1, Y2) :- Y2 > Y1. % Blue moves towards bottom
+moved_closer_to_edge(pink, Y1, Y2) :- Y2 < Y1. % Pink moves towards top
+
+% Determine the next player
+next_player(blue, pink).
+next_player(pink, blue).
