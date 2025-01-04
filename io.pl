@@ -52,32 +52,72 @@ validate_start_player(_,_) :-
 
 % Initial  IO
 choose_spin(GameState, NewGameState) :-
-    [Board, _, _, Player|_] = GameState,
+    [_, _, _, Player|_] = GameState,
     repeat,
     format_color(Player),
     write(', choose a row (1-4) or column (A-D) to spin (Input your choice, then press ENTER, . ,ENTER): '),
     catch(read(Input), _, fail),
-    spin(Input, Board, NewBoard, Success),
-    Success == 1,
-    replace_board(GameState, NewBoard, NewGameState), !.
+    spin(Input, GameState, NewGameState, Success),
+    Success == 1, !.
 
-spin(Input, Board, NewBoard, Success):- 
+spin(Input, GameState, NewGameState, 1):- 
+    [Board | _] = GameState,
     member(Input, [1, 2, 3, 4]), !,
     spin_row(Input, Board, NewBoard),
-    Success = 1.
-spin(Input, Board, NewBoard, Success) :- 
+    replace_board(GameState, NewBoard,SpunGameState),
+    scored_spinning(SpunGameState, NewGameState).
+spin(Input, GameState, NewGameState, 1) :- 
+    [Board | _] = GameState,
     member(Input, ['a', 'b', 'c', 'd', 'A', 'B', 'C', 'D']), !,
     column_index(Input, Col),
     spin_column(Col, Board, NewBoard),
-    Success = 1.
-spin(0, Board, NewBoard, Success) :-
+    replace_board(GameState, NewBoard,SpunGameState),
+    scored_spinning(SpunGameState, NewGameState).
+spin(0, GameState, NewGameState, 1) :-
+    [Board | _] = GameState,
     random(1, 4, Index),
     random_member(SpinType, [spin_row, spin_column]),
-    call(SpinType, Index, Board, NewBoard),
-    Success = 1, !.
-spin(Input, _Board, _NewBoard, Success) :-
-    write('Invalid input. Please choose a row (1-4) or column (A-D) Input was'), print(Input), nl,
-    Success = 0.
+    call(SpinType, Index, Board, NewBoard), !,
+    replace_board(GameState, NewBoard,SpunGameState),
+    scored_spinning(SpunGameState, NewGameState).
+spin(Input, _GS, _NewGS, 0) :-
+    write('Invalid input. Please choose a row (1-4) or column (A-D) Input was'), print(Input), nl.
+
+scored_spinning(GameState, NewGameState) :-
+    [Board,_,_,pink,_,CSB|_] = GameState,
+    [Board,_,_,blue,_,CSB|_] = OpGameState,
+    get_piece_coordinates(GameState, Coords),
+    get_piece_coordinates(OpGameState, OpCoords),
+    findall(
+        (X, Y),
+        (member((_, X, Y), Coords), is_score_point(pink, ( X, Y))),
+        PinkScorePoints
+    ),
+    findall(
+        (X, Y),
+        (member((_, X, Y), OpCoords), is_score_point(blue, ( X, Y))),
+        BlueScorePoints
+    ),
+    update_score_for_points(PinkScorePoints, GameState, UpdatedGameState),
+    update_score_for_points(BlueScorePoints, UpdatedGameState, NewGameState).
+
+scored_spinning(GameState, NewGameState) :-
+    [Board,_,_,blue,_,_,CSP|_] = GameState,
+    [Board,_,_,pink,_,_,CSP|_] = OpGameState,
+    get_piece_coordinates(GameState, Coords),
+    get_piece_coordinates(OpGameState, OpCoords),
+    findall(
+        (X, Y),
+        (member((_, X, Y), Coords), is_score_point(blue, (X, Y))),
+        BlueScorePoints
+    ),
+    findall(
+        (X, Y),
+        (member((_, X, Y), OpCoords), is_score_point(pink, (X, Y))),
+        PinkScorePoints
+    ),
+    update_score_for_points(PinkScorePoints, GameState, UpdatedGameState),
+    update_score_for_points(BlueScorePoints, UpdatedGameState, NewGameState).
 
 %returns piece and its xy
 choose_piece(GameState, NewGameState, Piece, (X, Y)) :-

@@ -52,6 +52,7 @@ can_move_to(_, _) :- fail, !.
 unpack_coordinates([], [], []).
 unpack_coordinates([(X, Y) | Rest], [X | Xs], [Y | Ys]) :-
     unpack_coordinates(Rest, Xs, Ys).
+    
 valid_coordinate((X, Y)) :-
     (X, Y) \= (0, 0).
 %getters
@@ -97,7 +98,6 @@ get_score(blue, GameState, Score) :-
 % Get the index of the square in the board 
 get_square_index(Board, Input, Symbol, SquareY, PlaceInSquare, Success) :-
     validate_move_input(Input, ColVisual, RowVisual), !,
-    write('Input passed Validation.\n'), 
     SquareY is (RowVisual - 1) * 4 + ColVisual, !,
     nth1(SquareY, Board, SqContent), !,
     nth1(PlaceInSquare, SqContent, Symbol), !,
@@ -140,12 +140,11 @@ blutentanz :-
 
 %alter board
 clean_square(0, 0, Board, TempBoard) :- 
-    write('Your piece is just starting!\n'), 
     TempBoard = Board, !.
 clean_square(X, Y, Board, TempBoard) :-
-    X > 0, Y > 0, write('Cleaning square...\n'),
-    nth1(Y, Board, Square),!, write('Got square...\n'),
-    nth1(SpaceX, Square, ' '),!, write('Got space...\n'),
+    X > 0, Y > 0, 
+    nth1(Y, Board, Square),!,
+    nth1(SpaceX, Square, ' '),!, 
     get_symbol(SpaceX, X, Symbol), %gets the symbol to replace
     replace_in_square(Square, X, Symbol, NewSquare),!,
     replace_in_board(Board, Y, NewSquare, TempBoard).
@@ -187,6 +186,16 @@ update_score(GameState, X, Y, NewGameState) :-
     increase_score(TempGameState, ScoredPiece, NewGameState).
 update_score(GameState, _, _, NewGameState) :- 
     NewGameState = GameState.
+
+update_score_test(GameState, X, Y, NewGameState) :-
+    [Board,_,_,Player |_] = GameState,
+    is_score_point(Player, (X, Y)), !,
+    clean_square(X, Y, Board, TempBoard),
+    replace_board(GameState, TempBoard, TempGameState), !,
+    get_x_y(ScoredPiece, X, Y, Board),
+    increase_score(TempGameState, ScoredPiece, NewGameState).
+update_score_test(GameState, _, _, NewGameState) :- 
+    NewGameState = GameState.
 %alter state
 increase_score([Board, Mode, Dif, pink, CurrentPiece, CFb, CFp, WB, WP, Type] ,ScoredPiece,[Board, Mode, Dif, pink, CurrentPiece, CFb, NewScore, WB, WP, Type]) :-
     append(CFp, [ScoredPiece], Score),
@@ -201,6 +210,11 @@ is_score_point(pink, (X, Y)) :-
 is_score_point(blue, (X, Y)) :-
     ScoringPos = [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)],
     member((X, Y), ScoringPos), !.
+
+update_score_for_points([], GameState, GameState) :- !.
+update_score_for_points([(X, Y) | T], GameState, NewGameState) :-
+    update_score_test(GameState, X, Y, TempGameState),  % Update score for the current (X, Y)
+    update_score_for_points(T, TempGameState, NewGameState).  % Recursively update for the rest of the points.
 
 switch_turn([Board, 2, Dif, pink, _, CSb, CSp, WB, WP, bot], [Board, 2, Dif, blue, -1, CSb, CSp, WB, WP, human]).
 switch_turn([Board, 2, Dif, blue, _, CSb, CSp, WB, WP, human], [Board, 2, Dif, pink, -1, CSb, CSp, WB, WP, bot]).

@@ -1,9 +1,3 @@
-
-/*USE MEANINGFUL NAMES FOR PREDICATES AND ARGUMENTS. 
-TRY TO WRITE CODE THAT ‘LOOKS DECLARATIVE’ AND AVOID USING ‘IMPERATIVE-LOOKING’ 
-CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE 
-(E.G., USING TAIL RECURSION WHEN POSSIBLE).*/
-
 :- consult(io).
 
 valid_moves_piece(0, 0, blue, Board, Moves) :-
@@ -112,14 +106,10 @@ construct_move(GameState, Move, PieceGameState) :-
     [Board | _] = GameState,
     repeat,
     choose_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
-    format('Moving piece: ~w~n', Piece),
     [_, _, _, Player | _ ] = PieceGameState,
     choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
-    format('Input move is x:~w, y:~w~n', [PlaceInSquare, Square]),
     valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
-    print(Moves),nl,
     member((PlaceInSquare, Square), Moves),
-    write('Move is valid! \n'),
     format('~w is moving from x:~w y:~w to x:~w y:~w ~n', [Player, Curr_X, Curr_Y, Square, PlaceInSquare]),
     X is PlaceInSquare, 
     Y is Square.
@@ -143,8 +133,7 @@ game_loop(GameState) :-
     write('Bot turn, greedy algorithm\n'), nl,
     print_turn(GameState),
     display_game(GameState),
-    greedy_move(GameState, Moves,  GreedyGameState),
-    call_move(GreedyGameState, Moves, FinalGameState),
+    greedy_move(GameState, FinalGameState),
     display_game(FinalGameState),
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
@@ -161,26 +150,24 @@ clear_data :-
     retractall(board(_)).
 
 move(GameState, Move, NewGameState) :-
-    Move = (X, Y), write('Move is '), print(Move), nl, 
+    Move = (X, Y),
     [Board, _, _, _, CurrPiece | _] = GameState,
-    get_x_y(CurrPiece, Old_X, Old_Y, Board),!, write('Old x is '), print(Old_X), write(' Old y is '), print(Old_Y), nl,
-    clean_square(Old_X, Old_Y, Board, TempBoard),!, write('cleaned square\n'),
-    nth1(Y, TempBoard, Square), !, write('got square\n'),
+    get_x_y(CurrPiece, Old_X, Old_Y, Board),!, 
+    clean_square(Old_X, Old_Y, Board, TempBoard),!, 
+    nth1(Y, TempBoard, Square), !, 
     replace_in_square(Square, X, CurrPiece, NewSquare), !,
     replace_in_board(TempBoard, Y, NewSquare, NewBoard),!,
     replace_board(GameState, NewBoard, TempState), 
     update_score(TempState, X, Y, NewGameState), 
-    write('exiting move\n'), !.
+    !.
 
 
 call_construct_and_move(0, GameState, GameState) :- !.
 call_construct_and_move(N, GameState, FinalGameState) :-
-    N > 0,repeat, write('here before construct \n'),!,
+    N > 0,repeat, !,
     construct_move(GameState, (NewX, NewY), PieceGameState), 
-    write('passed construct \n'),!,
-    format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
+    !,
     move(PieceGameState,(NewX, NewY), MovedGameState),
-    write('Exited move successfuly!'),
     display_game(MovedGameState),
     N1 is N - 1,
     call_construct_and_move(N1, MovedGameState, FinalGameState), !.
@@ -191,16 +178,6 @@ call_construct_and_move(_N, GameState, GameState) :-
     format_color(Player), write(' ran out of possible moves. Switching turn.\n'),!.
 
 
-% HEURISTIC START
-
-
-evaluate_rotations([], _, _, _, BestValue, (null, BestValue)). % No rotations left.
-evaluate_rotations([H | T], GameState, Depth, Player, Alpha, (BestMove, BestValue)) :-
-    spin(H, Board, NewBoard),
-    replace_board(GameState, NewBoard, RotatedGameState),
-    NewDepth is Depth - 1,
-    minimax(RotatedGameState, NewDepth, Player, _, Value),
-    update_best(H, Value, Alpha, T, (BestMove, BestValue)).
 
 call_move(GameState, [], FinalGameState) :-
     FinalGameState = GameState, !.
@@ -214,128 +191,13 @@ call_move(GameState, [H|T], FinalGameState) :-
     move(PieceGameState, Move, MovedGameState),
     display_game(MovedGameState),
     call_move(MovedGameState, T, FinalGameState).
-%unused. coisas pra a heuristica. não usando, apaga-se (daqui, mais 120 linhas)
-% Choosing Heuristic
-rotation_value(GameState, SortedResult, TotalBenefit) :-
-    [Board, Mod, Dif, Player, Piece, CFB, CFP, WB, WP, Type] = GameState,
-    opponent(Player, Opponent),
-    [Board, Mod, Dif, Opponent, Piece, CFB, CFP, WB, WP, Type]= OpponentGameState,
-    get_piece_coordinates(GameState, PlayerPieceCoordinates),
-    valid_moves(GameState, PInitMoves), 
-    %PInitMoves = [FirstMove|_],
-    remove_duplicates(PInitMoves, PlInitMoves),
-    print(PlInitMoves), nl,        
-    valid_moves(OpponentGameState, OInitMoves),  remove_duplicates(OInitMoves, OpInitMoves),
-    print(OpInitMoves), nl,
-    include(is_score_point(Player), PlInitMoves, PlayerStartScoreMoves),  
-    include(is_score_point(Opponent), OpInitMoves, OpponentStartScoreMoves),    
-    unpack_coordinates(PlayerPieceCoordinates, Xs, Ys),      
-    remove_duplicates(Xs, XSet),                             
-    remove_duplicates(Ys, YSet),
-    findall((RowIndex, NewBoard), 
-        (member(RowIndex, XSet), spin_row(RowIndex, Board, NewBoard)), SpunRows),
-    findall((ColIndex, NewBoard), 
-        (member(ColIndex, YSet), spin_column(ColIndex, Board, NewBoard)), SpunCols),
-    append(SpunRows, SpunCols, AllSpunBoards),
-    findall((Index, ValidMoves), 
-        (member((Index, Board), AllSpunBoards), valid_moves(Board, ValidMoves)), 
-        SpunMoves),
-    findall((Index, Moves, PlayerScoreMoves), 
-        (member((Index, Moves), SpunMoves), 
-         include(is_score_point(Player), Moves, PlayerScoreMoves)), 
-        PlayerResults),
-    findall((Index, Moves, OpponentScoreMoves), 
-        (member((Index, Moves), SpunMoves), 
-         include(is_score_point(Opponent), Moves, OpponentScoreMoves)), 
-        OpponentResults),
-    pack_results(PlayerResults, OpponentResults, Result),
-    calculate_benefits(Result, PlayerStartScoreMoves, OpponentStartScoreMoves, TotalBenefit),
-    sort_by_benefit(Result, SortedResult).
-% Sort the results by benefit
-sort_by_benefit(Result, SortedResult) :-
-    findall(
-        (Benefit, MoveLength, Index, Moves),
-        (
-            member((Index, Moves, PlayerScoreMoves, OpponentScoreMoves), Result),
-            compare_rotation_benefits(PlayerScoreMoves, [], OpponentScoreMoves, [], Benefit),
-            length(Moves, MoveLength)
-        ),
-        ResultsWithKeys
-    ),
-    keysort(ResultsWithKeys, AscendingSorted),
-    reverse(AscendingSorted, SortedResultsWithKeys),
 
-    findall(
-        (Index, Moves),
-        member((_Benefit, _MoveLength, Index, Moves), SortedResultsWithKeys),
-        SortedResult
-    ).
-calculate_benefits(Result, PlayerStartScoreMoves, OpponentStartScoreMoves, TotalBenefit) :-
-    findall(
-        Benefit, 
-        (
-            member((_Index, _Moves, PlayerScoreMoves, OpponentScoreMoves), Result), 
-            compare_rotation_benefits(
-                PlayerScoreMoves, PlayerStartScoreMoves, 
-                OpponentScoreMoves, OpponentStartScoreMoves, 
-                Benefit
-            )
-        ),
-        Benefits
-    ),
-    sum_list(Benefits, TotalBenefit).
-
-
-% Comparison of rotation benefits
-compare_rotation_benefits(CurrScoreMoves, CurrStartScoreMoves, OpponentScoreMoves, OpponentStartScoreMoves, Benefit) :-
-    length(CurrScoreMoves, CurrScoreCount),
-    length(CurrStartScoreMoves, CurrStartCount),
-    PlayerDelta is CurrScoreCount - CurrStartCount,
-    length(OpponentScoreMoves, OpponentScoreCount),
-    length(OpponentStartScoreMoves, OpponentStartCount),
-    OpponentDelta is OpponentScoreCount - OpponentStartCount,
-    Benefit is PlayerDelta - OpponentDelta.
-% Combining results of player and opponent
-pack_results([], [], []).
-pack_results([(Index, Moves, PlayerScoreMoves) | PlayerTail], 
-                [(Index, Moves, OpponentScoreMoves) | OpponentTail], 
-                [(Index, Moves, PlayerScoreMoves, OpponentScoreMoves) | ResultTail]) :-
-   pack_results(PlayerTail, OpponentTail, ResultTail).
-
-% Global heuristic functions focusing on piece placement priority
-value(GameState, Player, Value) :-
-    % Get scores
-    get_score(Player, GameState, PlScore),
-    opponent(Player, Opponent),
-    get_score(Opponent, GameState, OpoScore),
-    
-    % Get count of pieces still waiting to be placed
-    select_w(GameState, Player, PlWaiting),
-    select_w(GameState, Opponent, OpWaiting),
-    
-    % Calculate placement priority value
-    PlacementValue is (5 - PlWaiting) * 2,  % More value for fewer waiting pieces
-    OppPlacementValue is (5 - OpWaiting) * 2,
-    write('entering rot val\n'),
-    % Calculate rotation benefit
-    rotation_value(GameState, _, RotationBenefit),
-    
-    % Weighted combination of factors
-    Value is (0.4 * (PlScore - OpoScore) + 
-              0.4 * (PlacementValue - OppPlacementValue) +
-              0.2 * RotationBenefit).
-
-player_role(blue, max_player).
-player_role(pink, min_player).
-
-%acaba aqui as coisas para a heurística
 random_moves(GameState, Moves, NewGameState) :-
     [Board, _, _, Player | _] = GameState,
     display_game(GameState),
-    spin(0, Board, SpunBoard, Success),
+    spin(0, GameState, SpunGameState, Success),
     format_color(Player), write(' spinned!\n'),
     Success == 1,
-    replace_board(GameState, SpunBoard, SpunGameState),
     display_game(SpunGameState),
     random_move(SpunGameState, Move1, GameState1), !,
     random_move(GameState1, Move2, GameState2), !,
@@ -378,51 +240,95 @@ random_move(GameState, Move, NewGameState) :-
 %greedy
 
 % Define the greedy move that selects the best spin based on the criteria.
-greedy_move(GameState, Moves, FinalGameState) :-
+greedy_move(GameState, FinalGameState) :-
     % Retrieve the current board and player from the game state
     GameState = [Board, _, _, Player, _, Csb, Csp, _, _, _], 
     
     % Generate all possible spins and evaluate them
     Spins = [1,2,3,4,'a','b','c','d'],
-
     % Evaluate all possible spins and find the best one
     evaluate_spins(Spins, GameState , BestMove),
 
     % Apply the best move to the board and update the game state
-    spin(BestMove, Board, SpunBoard, Success),
+    spin(BestMove, GameState, SpunGameState, Success),
 
     format_color(Player), write(' spinned!\n'),
 
     Success == 1,
 
-    replace_board(GameState, SpunBoard, SpunGameState),
-
     display_game(SpunGameState),
 
     % Perform 3 greedy moves
-    greedy_move_piece(SpunGameState, Move1, GameState1), !,
-    greedy_move_piece(GameState1, Move2, GameState2), !,
-    greedy_move_piece(GameState2, Move3, MovedGameState), !,
-
-    replace_board(MovedGameState, SpunBoard, FinalGameState),
-
-    % Return all moves
-    Moves = [Move1, Move2, Move3].
+    greedy_move_piece(SpunGameState, GameState1), !,
+    display_game(GameState1),
+    greedy_move_piece(GameState1, GameState2), !,
+    display_game(GameState2),
+    greedy_move_piece(GameState2, FinalGameState), !.
 
 
+convert_waiting_pieces(blue, WaitingPieces, ConvertedPieces) :-
+    findall(NewPiece, (
+        member(Piece, WaitingPieces),
+        NewPiece is Piece + 4 
+    ), ConvertedPieces).
+
+convert_waiting_pieces(pink, WaitingPieces, ConvertedPieces) :-
+    findall(NewPiece, (
+        member(Piece, WaitingPieces),
+        NewPiece is Piece - 1 
+    ), ConvertedPieces).
 
 
-% Define a single greedy move
-greedy_move_piece(GameState, Move, NewGameState) :-
-    [Board, _, _, Player | _] = GameState,
-    valid_moves(GameState, Moves),
-    \+ has_no_moves(Moves), !,
+get_waiting_pieces_aux(WaitingPieces, GameState) :-
+    [Board, _, _, blue, _, CSB,_, WB|_] = GameState,
+    get_waiting_pieces(WaitingPieces, blue, WB, CSB).
 
-    % Evaluate each move to find the best one
+get_waiting_pieces_aux(WaitingPieces, GameState) :-
+    [Board, _, _, pink, _, _,CSP,_, WP|_] = GameState,
+    get_waiting_pieces(WaitingPieces, pink, WP, CSP).
+
+greedy_move_piece(GameState, NewGameState) :-
+    [Board, _, _, Player, _, CSB, CSP, WB, WP | _] = GameState,
+
+    % Get the list of waiting pieces using get_waiting_pieces
+    get_waiting_pieces_aux(WaitingPieces, GameState),
+
+    % Perform the conversion of waiting pieces based on the current player
+    convert_waiting_pieces(Player, WaitingPieces, ConvertedWaitingPieces),
+
+    % Retrieve all valid moves
+    valid_moves(GameState, AllMoves),
+
+    % Filter moves to only include those for waiting pieces
+    include(valid_move_for_waiting_piece_param(ConvertedWaitingPieces), AllMoves, FilteredMoves),
+
+    has_no_moves(FilteredMoves), !,
+    NewGameState = GameState.
+
+
+greedy_move_piece(GameState, NewGameState) :-
+    [Board, _, _, Player, _, CSB, CSP, WB, WP | _] = GameState,
+
+    % Get the list of waiting pieces using get_waiting_pieces
+    get_waiting_pieces_aux(WaitingPieces, GameState),
+
+    % Perform the conversion of waiting pieces based on the current player
+    convert_waiting_pieces(Player, WaitingPieces, ConvertedWaitingPieces),
+
+    % Retrieve all valid moves
+    valid_moves(GameState, AllMoves),
+
+    % Filter moves to only include those for waiting pieces
+    include(valid_move_for_waiting_piece_param(ConvertedWaitingPieces), AllMoves, FilteredMoves),
+
+    % Ensure there are valid moves after filtering
+    \+ has_no_moves(FilteredMoves),
+
+    % Evaluate each filtered move to find the best one
     findall(
-        (Piece, X, Y)-Score,
+        Score-(Piece, X, Y),
         (
-            member((Piece, X, Y), Moves),
+            member((Piece, X, Y), FilteredMoves),
             replace_current_piece_waiting_pieces(GameState, _, Piece, TempGameState),
             move(TempGameState, (X, Y), TempResultGameState),
             evaluate_move(GameState, TempResultGameState, Player, Score)
@@ -430,27 +336,84 @@ greedy_move_piece(GameState, Move, NewGameState) :-
         MoveScores
     ),
     keysort(MoveScores, SortedMoveScores),
-    reverse(SortedMoveScores, [(BestMove-_)|_]),
+    reverse(SortedMoveScores, [(_-BestMove)|_]),
 
     % Extract the best move details
     BestMove = (Piece, X, Y),
-    Move = (Piece, X, Y),
+    get_x_y(Piece, Xnow, Ynow, Board),
+    valid_coordinate((Xnow,Ynow)),
 
-    % Update GameState with the selected piece
     select_w(GameState, Player, W),
+    replace_current_piece_waiting_pieces(GameState, W, Piece, TempGameState),
+    % Apply the move
+    move(TempGameState, (X, Y), NewGameState).
+
+
+greedy_move_piece(GameState, NewGameState) :-
+    [Board, _, _, Player, _, CSB, CSP, WB, WP | _] = GameState,
+
+    % Get the list of waiting pieces using get_waiting_pieces
+    get_waiting_pieces_aux(WaitingPieces, GameState),
+
+
+    % Perform the conversion of waiting pieces based on the current player
+    convert_waiting_pieces(Player, WaitingPieces, ConvertedWaitingPieces),
+
+    % Retrieve all valid moves
+    valid_moves(GameState, AllMoves),
+
+    % Filter moves to only include those for waiting pieces
+    include(valid_move_for_waiting_piece_param(ConvertedWaitingPieces), AllMoves, FilteredMoves),
+
+    % Ensure there are valid moves after filtering
+    \+ has_no_moves(FilteredMoves),
+
+    % Evaluate each filtered move to find the best one
+    findall(
+        Score-(Piece, X, Y),
+        (
+            member((Piece, X, Y), FilteredMoves),
+            replace_current_piece_waiting_pieces(GameState, _, Piece, TempGameState),
+            move(TempGameState, (X, Y), TempResultGameState),
+            evaluate_move(GameState, TempResultGameState, Player, Score)
+        ),
+        MoveScores
+    ),
+    keysort(MoveScores, SortedMoveScores),
+    reverse(SortedMoveScores, [(_-BestMove)|_]),
+
+
+    % Extract the best move details
+    BestMove = (Piece, X, Y),
+
+    % Select waiting pieces
+    select_w(GameState, Player, W),
+
+    % Decrement W and update game state
     NewW is W - 1,
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, UpdatedGameState),
 
     % Apply the move
     move(UpdatedGameState, (X, Y), NewGameState).
 
+% Predicate to match valid moves based on waiting pieces
+valid_move_for_waiting_piece_param(WaitingPieces, (Piece, _, _)) :-
+    member(Piece, WaitingPieces).
+
+
 % Evaluate a move based on how much it brings the piece closer to the edge
 evaluate_move(GameState, NewGameState, Player, Score) :-
+    NewGameState = [_, _, _, _, CurrentPiece | _],
     get_piece_coordinates(GameState, CurrentPositions),
     get_piece_coordinates(NewGameState, NewPositions),
-    count_closer_positions(CurrentPositions, NewPositions, Player, Score).
+   
 
+    include(is_current_piece(CurrentPiece), CurrentPositions, FilteredCurrentPositions),
+    include(is_current_piece(CurrentPiece), NewPositions, FilteredNewPositions),
+    count_closer_positions(FilteredCurrentPositions, FilteredNewPositions, Player, Score).
 
+is_current_piece(CurrentPiece, (Piece, _, _)) :-
+    Piece == CurrentPiece.
 
 % Evaluate all possible spins
 evaluate_spins(Spins, GameState , BestMove) :-
@@ -458,36 +421,40 @@ evaluate_spins(Spins, GameState , BestMove) :-
     GameState = [Board, _, _, Player, _, Csb, Csp | _], 
     % For each spin, evaluate the three criteria and assign a score
     findall(
-        Spin-Score,
+        Score-Spin,
         (
             member(Spin, Spins),
-            spin(Spin, Board, NewBoard, _),
-            NewGameState = [NewBoard, _,_, Player, _, Csb, Csp | _],
+            spin(Spin, GameState, NewGameState, _),
             evaluate_spin(Spin, GameState, NewGameState, Score)
         ),
         SpinScores
     ),
     
     % Sort by score in descending order to prioritize best moves
-    keysort(SpinScores, SortedScores),
-    
+    keysort(SpinScores, SortedScoresAscending),
+    reverse(SortedScoresAscending, SortedScores),
+
     % Take the first element in the sorted list as the best move
-    SortedScores = [BestMove-_|_].
+    SortedScores = [(_-BestMove)|_].
 
 
 % Evaluate a single spin based on three criteria
 evaluate_spin(Spin, GameState, NewGameState, Score) :-
+    [Board, _, _, Player | _] = GameState,
+    [NewBoard, _, _, Player | _] = NewGameState,
     % Calculate how much the spin moves the player's pieces closer to the edge
     closer_to_edge(GameState, NewGameState, EdgeMoveScore),
     
     % Calculate the number of valid moves for the current player and the opponent
     valid_moves(GameState, PlayerMovesBefore),
     opponent(Player, Opponent),
-    valid_moves(GameState, OpponentMovesBefore),
+    [Board, _, _, Opponent | _] = OppGameState,
+    valid_moves(OppGameState, OpponentMovesBefore),
     
     % Get the current state after the spin
     valid_moves(NewGameState, PlayerMovesAfter),
-    valid_moves(NewGameState, OpponentMovesAfter),
+    [NewBoard, _, _, Opponent | _] = NewOppGameState,
+    valid_moves(NewOppGameState, OpponentMovesAfter),
 
     length(PlayerMovesBefore, PMBcount),
     length(PlayerMovesAfter, PMAcount),
@@ -496,7 +463,7 @@ evaluate_spin(Spin, GameState, NewGameState, Score) :-
     
     % Calculate the increase in valid moves for the player
     IncreasePlayerMoves is PMAcount - PMBcount,
-    
+
     % Calculate the decrease in valid moves for the opponent
     DecreaseOpponentMoves is OMBcount - OMAcount,
     
@@ -505,6 +472,7 @@ evaluate_spin(Spin, GameState, NewGameState, Score) :-
 
 % Calculate how much the spin moves the current player's pieces closer to the edge
 closer_to_edge(GameState, NewGameState, Score) :-
+    [_,_,_,Player | _] = GameState,
     % Get current and new piece positions
     get_piece_coordinates(GameState, CurrentPositions),
     get_piece_coordinates(NewGameState, NewPositions),
@@ -514,16 +482,35 @@ closer_to_edge(GameState, NewGameState, Score) :-
 
 % Count the number of pieces that moved closer to the target edge
 count_closer_positions(CurrentPositions, NewPositions, Player, Score) :-
-    findall(1, (member((Piece, X1, Y1), CurrentPositions), 
-                member((Piece, X2, Y2), NewPositions),
-                moved_closer_to_edge(Player, Y1, Y2)), 
-            CloserPieces),
-    length(CloserPieces, Score).
+    findall(Score,
+        (
+            member((Piece, X1, Y1), CurrentPositions),
+            member((Piece, X2, Y2), NewPositions),
+            evaluate_position_change(Player, X1, Y1, X2, Y2, Score)
+        ),
+        Scores),
+    sum_list(Scores, Score).
 
-% Helper to determine if a piece has moved closer to the target edge
-moved_closer_to_edge(blue, Y1, Y2) :- Y2 > Y1. % Blue moves towards bottom
-moved_closer_to_edge(pink, Y1, Y2) :- Y2 < Y1. % Pink moves towards top
+% Evaluate position change for blue pieces (row transition)
+evaluate_position_change(blue, _, Y1, _, Y2, 10) :-
+    Y2 =:= Y1 + 4.
 
-% Determine the next player
-next_player(blue, pink).
-next_player(pink, blue).
+evaluate_position_change(pink, _, 0, _, Y2, 10) :-
+    Y2 >= 12, Y2 =< 15.
+% Evaluate position change for pink pieces (row transition)
+evaluate_position_change(pink, _, Y1, _, Y2, 10) :-
+    Y2 =:= Y1 - 4.
+
+% Evaluate position change for blue pieces (within-row movement)
+evaluate_position_change(blue, X1, Y1, X2, Y2, 5) :-
+    Y2 =:= Y1,
+    X2 > 1.
+
+% Evaluate position change for pink pieces (within-row movement)
+evaluate_position_change(pink, X1, Y1, X2, Y2, 5) :-
+    Y2 =:= Y1,
+    X2 < 2.
+
+% Default case: no improvement
+evaluate_position_change(_, _, _, _, _, 0).
+
