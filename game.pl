@@ -133,7 +133,7 @@ show_winner(pink) :-
 choose_move(GameState, 1, (Square, PlaceInSquare)) :- 
     [Board, _,_,Player |_] = GameState,
     display_game(GameState),
-    
+
     repeat,
     format_color(Player),
     write(', you may choose your destination square using a combination of a lowercase row char (a to d) and a number (1 to 4). Ex: a4.\n'),
@@ -352,7 +352,10 @@ random_move(GameState, (-1,0,0), GameState) :-
 greedy_move(GameState, FinalGameState) :-
     GameState = [_, _, _, Player| _], 
     
-    Spins = [1,2,3,4,'a','b','c','d'],
+    Dim = 4,
+    generate_rows_cols(Dim, Rows, Cols),
+    append(Rows, Cols, Spins),
+    
     evaluate_spins(Spins, GameState , BestMove),
 
     spin(BestMove, GameState, SpunGameState, 1),
