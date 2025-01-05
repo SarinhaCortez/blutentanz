@@ -37,6 +37,7 @@ get_square(N, Board, Square) :-
 % Print the waiting figures for the pink player
 
 print_pink_waiting_figures_helper(0, _) :- nl, !.
+
 print_pink_waiting_figures_helper(N, FN) :-
     write('  '),
     format_color(FN),
@@ -53,6 +54,7 @@ print_pink_waiting_figures(N) :-
 % Print the waiting figures for the blue player
 
 print_blue_waiting_figures(0, _) :- nl, !.
+
 print_blue_waiting_figures(N) :-
     print_blue_waiting_figures(N, 4).
 
