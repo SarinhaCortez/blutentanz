@@ -149,16 +149,6 @@ blutentanz :-
     repeat_format_color(22, '-'), nl, 
     repeat_format_color(22, '*'), nl.
 
-
-% Predicate to show the winner of the game
-show_winner(Winner) :-
-    repeat_format_color(22, '+'), nl,
-    repeat_format_color(22, '-'), nl,
-    format_color(Winner),
-    write(' won!'), nl,
-    repeat_format_color(22, '-'), nl, 
-    repeat_format_color(22, '*'), nl.
-
 % Predicate to clean a square on the board
 clean_square(0, 0, Board, Board) :- !.
 clean_square(X, Y, Board, TempBoard) :-

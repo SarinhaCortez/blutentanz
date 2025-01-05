@@ -290,19 +290,6 @@ greedy_move(GameState, FinalGameState) :-
     greedy_move_piece(GameState2, FinalGameState), !.
 
 
-convert_waiting_pieces(blue, WaitingPieces, ConvertedPieces) :-
-    findall(NewPiece, (
-        member(Piece, WaitingPieces),
-        NewPiece is Piece + 4 
-    ), ConvertedPieces).
-
-convert_waiting_pieces(pink, WaitingPieces, ConvertedPieces) :-
-    findall(NewPiece, (
-        member(Piece, WaitingPieces),
-        NewPiece is Piece - 1 
-    ), ConvertedPieces).
-
-
 greedy_move_piece(GameState, NewGameState) :-
     [_, _, _, Player | _] = GameState,
 
@@ -310,7 +297,10 @@ greedy_move_piece(GameState, NewGameState) :-
     get_waiting_pieces(WaitingPieces, GameState),
 
     % Perform the conversion of waiting pieces based on the current player
-    convert_waiting_pieces(Player, WaitingPieces, ConvertedWaitingPieces),
+    findall(NewPiece, (
+        member(Piece, WaitingPieces),
+        get_piece(Player, Piece, NewPiece) 
+    ), ConvertedWaitingPieces),
 
     % Retrieve all valid moves
     valid_moves(GameState, AllMoves),
@@ -329,7 +319,10 @@ greedy_move_piece(GameState, NewGameState) :-
     get_waiting_pieces(WaitingPieces, GameState),
 
     % Perform the conversion of waiting pieces based on the current player
-    convert_waiting_pieces(Player, WaitingPieces, ConvertedWaitingPieces),
+    findall(NewPiece, (
+        member(Piece, WaitingPieces),
+        get_piece(Player, Piece, NewPiece) 
+    ), ConvertedWaitingPieces),
 
     % Retrieve all valid moves
     valid_moves(GameState, AllMoves),
@@ -373,7 +366,10 @@ greedy_move_piece(GameState, NewGameState) :-
 
 
     % Perform the conversion of waiting pieces based on the current player
-    convert_waiting_pieces(Player, WaitingPieces, ConvertedWaitingPieces),
+    findall(NewPiece, (
+        member(Piece, WaitingPieces),
+        get_piece(Player, Piece, NewPiece) 
+    ), ConvertedWaitingPieces),
 
     % Retrieve all valid moves
     valid_moves(GameState, AllMoves),
