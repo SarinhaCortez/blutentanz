@@ -34,32 +34,24 @@ shuffle_board(Board, ShuffledBoard) :-
 get_square(N, Board, Square) :-
     nth1(N, Board, Square). 
       
-% Print the waiting figures for the pink player
+% Print the waiting figures for the pink player, tail recursion
 
 print_pink_waiting_figures_helper(0, _) :- nl, !.
-
 print_pink_waiting_figures_helper(N, FN) :-
     write('  '),
     format_color(FN),
     N1 is N - 1,
     FN1 is FN - 1,
     print_pink_waiting_figures_helper(N1, FN1).
-
-% Tail recursive predicate to print waiting figures for pink player
-
 print_pink_waiting_figures(N) :-
     FN is N - 1,
     print_pink_waiting_figures_helper(N, FN).
 
-% Print the waiting figures for the blue player
+% Print the waiting figures for the blue player, tail recursion
 
 print_blue_waiting_figures(0, _) :- nl, !.
-
 print_blue_waiting_figures(N) :-
     print_blue_waiting_figures(N, 4).
-
-% Tail-recursive helper predicate
-
 print_blue_waiting_figures(N, Offset) :-
     write('  '),
     FN is N + Offset,  
