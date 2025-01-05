@@ -32,24 +32,29 @@ get_square(N, Board, Square) :-
     nth1(N, Board, Square). 
       
 % Print the waiting figures for the pink player
-print_pink_waiting_figures(0) :- nl, !.
+print_pink_waiting_figures_helper(0, _) :- nl, !.
+print_pink_waiting_figures_helper(N, FN) :-
+    write('  '),
+    format_color(FN),
+    N1 is N - 1,
+    FN1 is FN - 1,
+    print_pink_waiting_figures_helper(N1, FN1).
+% Tail recursive predicate to print waiting figures for pink player
 print_pink_waiting_figures(N) :-
-    write('  '),
-    N > 0,
     FN is N - 1,
-    format_color(FN),
-    N1 is N - 1,
-    print_pink_waiting_figures(N1).
+    print_pink_waiting_figures_helper(N, FN).
 
-% Print the waiting figures for the blue player
-print_blue_waiting_figures(0) :- nl, !.
+
 print_blue_waiting_figures(N) :-
+    print_blue_waiting_figures(N, 4).
+% Tail-recursive helper predicate
+print_blue_waiting_figures(0, _) :- nl, !.
+print_blue_waiting_figures(N, Offset) :-
     write('  '),
-    N > 0,
-    FN is N + 4,
-    format_color(FN),
+    FN is N + Offset,  
+    format_color(FN),  
     N1 is N - 1,
-    print_blue_waiting_figures(N1).
+    print_blue_waiting_figures(N1, Offset).
 
 % Display the game board
 print_board(GameState) :-
@@ -107,23 +112,27 @@ format_square( [Sq1_1, Sq1_2, Sq1_3, Sq1_4],
 
     write('  _______________'), nl.
 
-% Spin a square in the board
+% Spin a square in the board 
 spin_square_in_board(Pos, Board, NewBoard) :-
     nth1(Pos, Board, Square), 
     spin_square(Square, SpunSquare),
     replace_nth(Board, Pos, SpunSquare, NewBoard), !. 
 
 % Replace the N-th element in a list
-replace_nth([_|T], 1, Elem, [Elem|T]) :- !.
-replace_nth([H|T], N, Elem, [H|NewT]) :-
+replace_nth(List, N, Elem, NewList) :-
+    replace_nth_acc(List, N, Elem, [], NewList).
+replace_nth_acc([_|T], 1, Elem, Acc, NewList) :-
+    reverse(Acc, RevAcc),
+    append(RevAcc, [Elem|T], NewList), !.
+replace_nth_acc([H|T], N, Elem, Acc, NewList) :-
     N > 1,
     N1 is N - 1,
-    replace_nth(T, N1, Elem, NewT).
+    replace_nth_acc(T, N1, Elem, [H|Acc], NewList).
 
 % Spin a square 90 degrees
 spin_square([A, B, C, D], [C, A, D, B]) :- !.
 
-% Spin a row in the board
+% Spin a row in the board, using tail recursion
 spin_row(0, Board, NewBoard) :- 
     random(1, 4, Index),
     random_member(SpinType, [spin_row, spin_column]),
@@ -140,7 +149,7 @@ spin_row_aux(Pos, End, Board, NewBoard) :-
     Pos1 is Pos + 1, 
     spin_row_aux(Pos1, End, TempBoard, NewBoard). 
 
-% Spin a column in the board
+% Spin a column in the board, using tail recursion
 spin_column(Col, Board, NewBoard) :-
     Start is Col, 
     End is 16, 
