@@ -157,7 +157,7 @@ game_loop(GameState) :-
 %computer turn with difficulty 2
 game_loop(GameState) :-
     [_, _, 2, _, _, _, _, _, _, bot] = GameState, % Difficulty 2
-    write('Bot turn, greedy algorithm\n'), nl,
+    write('Bot turn, hard.\n'), nl,
     print_turn(GameState),
     display_game(GameState),
     greedy_move(GameState, FinalGameState),
@@ -167,7 +167,7 @@ game_loop(GameState) :-
 %computer turn with difficulty 1
 game_loop(GameState):-
     [_, _, 1, _, _, _, _, _, _, bot] = GameState, %dif1
-    write('Bot turn, with random\n'), nl,
+    write('Bot turn, easy.\n'), nl,
     print_turn(GameState),
     random_moves(GameState, Moves, WGameState),!,
     call_move(WGameState, Moves, FinalGameState),
