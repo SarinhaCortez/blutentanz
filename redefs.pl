@@ -1,38 +1,52 @@
 :- use_module(library(lists)).
 
+% between 
+
 between(Low, High, Value) :-
     Low =< High,
     Value = Low.
+    
 between(Low, High, Value) :-
     Low < High,
     Next is Low + 1,
     between(Next, High, Value).
 
-atom_number(Atom, Number) :-
-    atom(Atom),        % Ensure the first argument is an atom
-    atom_codes(Atom, Codes), % Convert atom to list of character codes
-    number_codes(Number, Codes). % Convert character codes to a number
+% atom_number
 
 atom_number(Atom, Number) :-
-    number(Number),    % Ensure the second argument is a number
-    number_codes(Number, Codes), % Convert number to character codes
-    atom_codes(Atom, Codes). % Convert character codes to an atom
+    atom(Atom),       
+    atom_codes(Atom, Codes), 
+    number_codes(Number, Codes). 
+
+atom_number(Atom, Number) :-
+    number(Number),   
+    number_codes(Number, Codes), 
+    atom_codes(Atom, Codes).
+
+% remove_duplicates
 
 remove_duplicates([], []).
 
-% Recursive case: Check if the head of the list is already in the processed tail
 remove_duplicates([H|T], Result) :-
-    member(H, T),            % If H is in the tail, skip it
+    member(H, T),        
     remove_duplicates(T, Result).
 
 remove_duplicates([H|T], [H|Result]) :-
-    \+ member(H, T),         % If H is not in the tail, keep it
+    \+ member(H, T),        
     remove_duplicates(T, Result).
+
+% sum_list
+
 sum_list([], 0).
+
 sum_list([H|T], Sum) :-
     sum_list(T, Rest),
     Sum is H + Rest.
 
+% max
+
 max( X, X , X ) .
+
 max( X, Y , X ) :- X > Y .
+
 max( X, Y , Y ) :- X < Y .
