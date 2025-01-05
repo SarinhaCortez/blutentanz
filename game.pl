@@ -130,7 +130,7 @@ show_winner(pink) :-
 
 % Predicate to choose a move for a human player
 
-choose_move(GameState, 1, (Square, PlaceInSquare)) :- 
+choose_move(GameState, 0,(Square, PlaceInSquare)) :- 
     [Board, _,_,Player |_] = GameState,
     display_game(GameState),
 
@@ -150,7 +150,40 @@ choose_move(GameState, 1, (Square, PlaceInSquare)) :-
     write(', what symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(Symbol), nl,
     get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, 1).
-    
+
+% Random move selection
+
+% Moving pieces previously out of board
+
+choose_move(GameState, 1, Move, NewGameState) :-
+    [Board, _, _, Player | _] = GameState,
+    select_w(GameState, W), W > 0, 
+    valid_moves_piece(0, 0, Player, Board, Moves), 
+    \+ has_no_moves(Moves),!,
+    findall(Piece, (between(1, W, X), get_piece(Player, X, Piece)), ListOfPieces), !,
+    last(ListOfPieces, Piece), 
+    random_member(RandomMove, Moves),
+    RandomMove = (X, Y),
+    Move = (Piece, X, Y), 
+    NewW is W - 1,
+    replace_current_piece_waiting_pieces(GameState, NewW, Piece, PieceGameState),
+    move(PieceGameState, RandomMove, NewGameState).
+choose_move(GameState, 1, Move, NewGameState) :-
+    select_w(GameState, 0), 
+    valid_moves(GameState, Moves),
+    \+ has_no_moves(Moves), !,
+    random_member(Move, Moves),
+    Move = (P, X, Y), M = (X, Y),
+    replace_current_piece_waiting_pieces(GameState, 0, P, PieceGameState),
+    move(PieceGameState, M, NewGameState).
+choose_move(GameState, 1,(-1,0,0), GameState) :-
+    [Board, _, _, Player | _] = GameState,
+    valid_moves_piece(0, 0, Player, Board, Moves),
+    has_no_moves(Moves), !.
+choose_move(GameState, 1,(-1,0,0), GameState) :-
+    valid_moves(GameState, Moves),
+    has_no_moves(Moves), !.
+
 % Predicate to construct a move for a human player
 
 construct_move(GameState, Move, PieceGameState) :-
@@ -159,7 +192,7 @@ construct_move(GameState, Move, PieceGameState) :-
 
     repeat,
     choose_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
-    choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
+    choose_move(PieceGameState, 0, (Square, PlaceInSquare)),
 
     valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
 
@@ -214,6 +247,7 @@ game_loop(GameState):-
     print_turn(GameState),
 
     random_moves(GameState, Moves, WGameState),!,
+    
     call_move(WGameState, Moves, FinalGameState),
     display_game(FinalGameState),
 
@@ -233,7 +267,6 @@ move(GameState, Move, NewGameState) :-
     replace_in_square(Square, X, CurrPiece, NewSquare), !,
     replace_in_board(TempBoard, Y, NewSquare, NewBoard),!,
     replace_board(GameState, NewBoard, TempState), 
-
     update_score(TempState, X, Y, NewGameState), !.
 
 % Predicate to call construct and move (Human Turn)
@@ -287,61 +320,13 @@ random_moves(GameState, Moves, NewGameState) :-
     format_color(Player), write(' spinned!\n'),
     display_game(SpunGameState),
 
-    random_move(SpunGameState, Move1, GameState1), !,
-    random_move(GameState1, Move2, GameState2), !,
-    random_move(GameState2, Move3, MovedGameState),!,
+    choose_move(SpunGameState, 1, Move1, GameState1), !,
+    
+    choose_move(GameState1, 1, Move2, GameState2), !,
+    choose_move(GameState2, 1, Move3, MovedGameState),!,
 
     replace_board(MovedGameState, SpunBoard, NewGameState),
     Moves = [Move1, Move2, Move3].
-
-% Random move selection
-
-% Moving pieces previously out of board
-
-random_move(GameState, Move, NewGameState) :-
-    [Board, _, _, Player | _] = GameState,
-    select_w(GameState, W), W > 0, 
-    valid_moves_piece(0, 0, Player, Board, Moves), 
-
-    \+ has_no_moves(Moves),!,
-
-    findall(Piece, (between(1, W, X), get_piece(Player, X, Piece)), ListOfPieces), !,
-    last(ListOfPieces, Piece), 
-    random_member(RandomMove, Moves),
-
-    RandomMove = (X, Y),
-    Move = (Piece, X, Y), 
-    NewW is W - 1,
-    replace_current_piece_waiting_pieces(GameState, NewW, Piece, PieceGameState),
-
-    move(PieceGameState, RandomMove, NewGameState).
-
-% Moving pieces in-board
-
-random_move(GameState, Move, NewGameState) :-
-    select_w(GameState, 0), 
-    valid_moves(GameState, Moves),
-
-    \+ has_no_moves(Moves), !,
-
-    random_member(Move, Moves),
-
-    Move = (P, X, Y), M = (X, Y),
-    replace_current_piece_waiting_pieces(GameState, 0, P, PieceGameState),
-
-    move(PieceGameState, M, NewGameState).
-
-% No valid Moves
-
-random_move(GameState, (-1,0,0), GameState) :-
-    [Board, _, _, Player | _] = GameState,
-
-    valid_moves_piece(0, 0, Player, Board, Moves),
-    has_no_moves(Moves), !.
-
-random_move(GameState, (-1,0,0), GameState) :-
-    valid_moves(GameState, Moves),
-    has_no_moves(Moves), !.
 
 % GREEDY BOT
 
@@ -536,7 +521,7 @@ evaluate_spin(_Spin, GameState, NewGameState, Score) :-
     [NewBoard, _, _, Opponent | _] = NewOppGameState,
     opponent(Player, Opponent),
 
-    closer_to_edge(GameState, NewGameState, EdgeMoveScore),
+    value(GameState, NewGameState, EdgeMoveScore),
     
     valid_moves(GameState, PlayerMovesBefore),
     valid_moves(OppGameState, OpponentMovesBefore),
@@ -555,7 +540,7 @@ evaluate_spin(_Spin, GameState, NewGameState, Score) :-
 
 % Predicate to check if pieces are closer to scoring edge in new game state
 
-closer_to_edge(GameState, NewGameState, Score) :-
+value(GameState, NewGameState, Score) :-
     [_,_,_,Player | _] = GameState,
 
     get_piece_coordinates(GameState, CurrentPositions),
