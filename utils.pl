@@ -52,12 +52,10 @@ can_move_to(_, _) :- fail, !.
 unpack_coordinates([], [], []).
 unpack_coordinates([(X, Y) | Rest], [X | Xs], [Y | Ys]) :-
     unpack_coordinates(Rest, Xs, Ys).
-
-% Predicate to check if a coordinate is valid
-valid_coordinate((0, 0)) :- false, !.
-valid_coordinate((_, _)).
-
-% Predicate to get the waiting pieces for a player
+    
+valid_coordinate((X, Y)) :-
+    (X, Y) \= (0, 0).
+%getters
 get_waiting_pieces(ListOfPieces, blue, WB, CSB) :-
     max(WB, 1, Min),
     findall(X, (between(Min, 5, X), \+ member(X, CSB)), ListOfPieces), !.
@@ -143,19 +141,6 @@ blutentanz :-
     repeat_format_color(22, '-'), nl, 
     repeat_format_color(22, '*'), nl.
 
-% Predicate to print the game rules
-print_rules :-
-    see('rules.txt'),
-    print_lines,
-    seen.
-
-% Predicate to print lines from a file
-print_lines :-
-    read(Line),
-    Line \= end_of_file, 
-    writeln(Line),
-    print_lines.
-print_lines. 
 
 % Predicate to show the winner of the game
 show_winner(Winner) :-
@@ -171,7 +156,7 @@ clean_square(0, 0, Board, Board) :- !.
 clean_square(X, Y, Board, TempBoard) :-
     X > 0, Y > 0,
     nth1(Y, Board, Square),!, 
-    nth1(SpaceX, Square, ' '),!,
+    nth1(SpaceX, Square, ' '),!, 
     get_symbol(SpaceX, X, Symbol), %gets the symbol to replace
     replace_in_square(Square, X, Symbol, NewSquare),!,
     replace_in_board(Board, Y, NewSquare, TempBoard).
@@ -221,7 +206,15 @@ update_score(GameState, X, Y, NewGameState) :-
     increase_score(TempGameState, ScoredPiece, NewGameState).
 update_score(GameState, _, _, GameState).
 
-% Predicate to increase the score for a player in the game state
+update_score_test(GameState, X, Y, NewGameState) :-
+    [Board,_,_,Player |_] = GameState,
+    is_score_point(Player, (X, Y)), !,
+    clean_square(X, Y, Board, TempBoard),
+    replace_board(GameState, TempBoard, TempGameState), !,
+    get_x_y(ScoredPiece, X, Y, Board),
+    increase_score(TempGameState, ScoredPiece, NewGameState).
+update_score_test(GameState, _, _, GameState).
+%alter state
 increase_score([Board, Mode, Dif, pink, CurrentPiece, CFb, CFp, WB, WP, Type] ,ScoredPiece,[Board, Mode, Dif, pink, CurrentPiece, CFb, NewScore, WB, WP, Type]) :-
     append(CFp, [ScoredPiece], Score),
     remove_duplicates(Score, NewScore).
@@ -236,6 +229,11 @@ is_score_point(blue, (X, Y)) :-
     member((X, Y), [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)]), !.
 
 % Predicate to switch the turn in the game state
+update_score_for_points([], GameState, GameState) :- !.
+update_score_for_points([(X, Y) | T], GameState, NewGameState) :-
+    update_score_test(GameState, X, Y, TempGameState),  % Update score for the current (X, Y)
+    update_score_for_points(T, TempGameState, NewGameState).  % Recursively update for the rest of the points.
+
 switch_turn([Board, 2, Dif, pink, _, CSb, CSp, WB, WP, bot], [Board, 2, Dif, blue, -1, CSb, CSp, WB, WP, human]).
 switch_turn([Board, 2, Dif, pink, _, CSb, CSp, WB, WP, human], [Board, 2, Dif, blue, -1, CSb, CSp, WB, WP, bot]).
 switch_turn([Board, 2, Dif, blue, _, CSb, CSp, WB, WP, human], [Board, 2, Dif, pink, -1, CSb, CSp, WB, WP, bot]).
