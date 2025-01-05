@@ -26,6 +26,17 @@ column_index('b', 2).
 column_index('c', 3).
 column_index('d', 4).
 column_index(A, Col) :- char_code(A, Code), Code >= 65, Code =< 68, Col is Code - 64.
+/*
+% Predicate to get the column index from a character
+column_index(Char, Col) :-
+    atom_chars('abcdijklmnopqrstuvwxyz', Chars), 
+    nth1(Col, Chars, Char).   
+atom_chars is not defined in sicstus
+*/
+%based on board dimensions generate row number
+generate_rows(Dim) :-
+    findall(X, between(1, Dim, X), Rows),
+    findall(C, (member(R, Rows), column_index(C, R)), Cols).
 
 % Predicate to select the waiting piece (W) from the game state
 
@@ -33,10 +44,7 @@ select_w(GameState, W):-
     [_, _, _, blue, _, _, _, W,_, _] = GameState.
 select_w(GameState, W):-
     [_, _, _, pink, _, _, _, _, W, _] = GameState.
-select_w(GameState, blue, W):-
-    [_, _, _, _, _, _, _, W, _, _] = GameState.
-select_w(GameState, pink, W):-
-    [_, _, _, _, _, _, _, _, W, _] = GameState.
+    
 
 % Predicate to select the current score (Score) from the game state
 
@@ -90,10 +98,13 @@ get_waiting_pieces(ListOfPieces, pink, WP, CSP) :-
 % Predicate to get the internal representation value for a piece from an input (0-5) for a player
 
 get_piece(pink, Input, Piece) :-
-    Piece is Input - 1.
-
+    Piece is Input - 1, !.
 get_piece(blue, Input, Piece) :-
-    Piece is Input + 4.
+    Piece is Input + 4, !.
+get_input(pink, Input, Piece) :-
+    Input is Piece + 1.
+get_input(blue, Input, Piece) :-
+    Input is Piece - 4.
 
 % Predicate to get the X and Y coordinates of a piece on the board, if not, returns 0,0
 

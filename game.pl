@@ -132,8 +132,9 @@ show_winner(pink) :-
 
 choose_move(GameState, 1, (Square, PlaceInSquare)) :- 
     [Board, _,_,Player |_] = GameState,
-
-    repeat, nl,
+    display_game(GameState),
+    
+    repeat,
     format_color(Player),
     write(', you may choose your destination square using a combination of a lowercase row char (a to d) and a number (1 to 4). Ex: a4.\n'),
 
@@ -148,10 +149,8 @@ choose_move(GameState, 1, (Square, PlaceInSquare)) :-
     nl,format_color(Player),
     write(', what symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(Symbol), nl,
-
-    get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, 1),
-    format('SQInput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]). 
-
+    get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, 1).
+    
 % Predicate to construct a move for a human player
 
 construct_move(GameState, Move, PieceGameState) :-
@@ -159,13 +158,14 @@ construct_move(GameState, Move, PieceGameState) :-
     [Board, _,_, Player | _] = GameState,
 
     repeat,
-    choose_piece(GameState, PieceGameState, _Piece, (Curr_X, Curr_Y)),
+    choose_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
     choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
 
     valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
 
     member((PlaceInSquare, Square), Moves),
-    format('~w is moving from x:~w y:~w to x:~w y:~w ~n', [Player, Curr_X, Curr_Y, Square, PlaceInSquare]),
+    get_input(Player, Input, Piece), format_color(Player),
+    format(' is moving piece ~w to x:~w y:~w ~n~n', [Input, Curr_X, Curr_Y, Square, PlaceInSquare]),
     X is PlaceInSquare, 
     Y is Square.
 
@@ -229,9 +229,7 @@ game_loop(GameState):-
 move(GameState, Move, NewGameState) :-
     Move = (X, Y),
     [Board, _, _, _, CurrPiece | _] = GameState,
-
-    get_x_y(CurrPiece, Old_X, Old_Y, Board),!, write('Old x is '), print(Old_X), write(' Old y is '), print(Old_Y), nl,
-
+    get_x_y(CurrPiece, Old_X, Old_Y, Board),!,
     clean_square(Old_X, Old_Y, Board, TempBoard),!,
     nth1(Y, TempBoard, Square), !,
     replace_in_square(Square, X, CurrPiece, NewSquare), !,
@@ -273,7 +271,6 @@ call_move(GameState, [(-1,0,0)|_], GameState) :- !.
 call_move(GameState, [H|T], FinalGameState) :-
     select_w(GameState, W), W >= 0,
     H = (Piece, X, Y), Move = (X, Y),
-    format('Piece: ~w, X: ~w, Y: ~w~n', [Piece, X, Y]),
     replace_current_piece_waiting_pieces(GameState, W, Piece, PieceGameState),
     move(PieceGameState, Move, MovedGameState),
     display_game(MovedGameState),
@@ -305,8 +302,7 @@ random_moves(GameState, Moves, NewGameState) :-
 
 random_move(GameState, Move, NewGameState) :-
     [Board, _, _, Player | _] = GameState,
-
-    select_w(GameState, Player, W), W > 0, 
+    select_w(GameState, W), W > 0, 
     valid_moves_piece(0, 0, Player, Board, Moves), 
 
     \+ has_no_moves(Moves),!,
@@ -421,7 +417,8 @@ greedy_move_piece(GameState, NewGameState) :-
     BestMove = (Piece, X, Y),
     get_x_y(Piece, Xnow, Ynow, Board),
     valid_coordinate((Xnow,Ynow)),
-    select_w(GameState, Player, W),
+
+    select_w(GameState, W),
     replace_current_piece_waiting_pieces(GameState, W, Piece, TempGameState),
 
     move(TempGameState, (X, Y), NewGameState).
@@ -457,7 +454,7 @@ greedy_move_piece(GameState, NewGameState) :-
     reverse(SortedMoveScores, [(_-BestMove)|_]),
 
     BestMove = (Piece, X, Y),
-    select_w(GameState, Player, W),
+    select_w(GameState, W),
     NewW is W - 1,
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, UpdatedGameState),
 

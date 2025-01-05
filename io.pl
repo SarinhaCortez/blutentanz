@@ -195,7 +195,7 @@ choose_piece(pink, _, WP, NewW, Piece, CSP) :-
     get_waiting_pieces(Pieces, pink, WP, CSP), !,
 
     repeat,
-    format_color(pink),
+    nl, format_color(pink), 
     write(', what piece do you want to move? (Input your choice, then press ENTER, . ,ENTER):\nYou can choose from '),
     print(Pieces),
     catch(read(Input), _, fail), 
