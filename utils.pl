@@ -21,13 +21,7 @@ column_index('b', 2).
 column_index('c', 3).
 column_index('d', 4).
 column_index(A, Col) :- char_code(A, Code), Code >= 65, Code =< 68, Col is Code - 64.
-/*
-% Predicate to get the column index from a character
-column_index(Char, Col) :-
-    atom_chars('abcdijklmnopqrstuvwxyz', Chars), 
-    nth1(Col, Chars, Char).   
-atom_chars is not defined in sicstus
-*/
+
 %based on board dimensions generate row number
 generate_rows(Dim) :-
     findall(X, between(1, Dim, X), Rows),
@@ -319,3 +313,11 @@ format_color(X) :-
 format_color(X) :- 
     print_in_color(white, X).      
 
+/*
+% Mapping row number to column character
+column_index(Char, Row) :-
+    integer(Row),   % Ensure Row is instantiated as an integer
+    Code is 96 + Row,  
+    char_code(Char, Code).  
+    Ideal implementation. Did not have time to integrate
+*/
