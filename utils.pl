@@ -56,6 +56,14 @@ unpack_coordinates([(X, Y) | Rest], [X | Xs], [Y | Ys]) :-
 valid_coordinate((X, Y)) :-
     (X, Y) \= (0, 0).
 %getters
+
+get_waiting_pieces(WaitingPieces, GameState) :-
+    [Board, _, _, blue, _, CSB,_, WB|_] = GameState,
+    get_waiting_pieces(WaitingPieces, blue, WB, CSB).
+
+get_waiting_pieces(WaitingPieces, GameState) :-
+    [Board, _, _, pink, _, _,CSP,_, WP|_] = GameState,
+    get_waiting_pieces(WaitingPieces, pink, WP, CSP).
 get_waiting_pieces(ListOfPieces, blue, WB, CSB) :-
     max(WB, 1, Min),
     findall(X, (between(Min, 5, X), \+ member(X, CSB)), ListOfPieces), !.

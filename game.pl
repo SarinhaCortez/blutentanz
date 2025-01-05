@@ -224,9 +224,10 @@ call_move(GameState, [H|T], FinalGameState) :-
     call_move(MovedGameState, T, FinalGameState).
 
 random_moves(GameState, Moves, NewGameState) :-
-    [Board, _, _, Player | _] = GameState,
+    [_, _, _, Player | _] = GameState,
     display_game(GameState),
     spin(0, GameState, SpunGameState, 1),
+    [SpunBoard|_] = SpunGameState,
     format_color(Player), write(' spinned!\n'),
     display_game(SpunGameState),
     random_move(SpunGameState, Move1, GameState1), !,
@@ -303,19 +304,11 @@ convert_waiting_pieces(pink, WaitingPieces, ConvertedPieces) :-
     ), ConvertedPieces).
 
 
-get_waiting_pieces_aux(WaitingPieces, GameState) :-
-    [Board, _, _, blue, _, CSB,_, WB|_] = GameState,
-    get_waiting_pieces(WaitingPieces, blue, WB, CSB).
-
-get_waiting_pieces_aux(WaitingPieces, GameState) :-
-    [Board, _, _, pink, _, _,CSP,_, WP|_] = GameState,
-    get_waiting_pieces(WaitingPieces, pink, WP, CSP).
-
 greedy_move_piece(GameState, NewGameState) :-
     [Board, _, _, Player, _, CSB, CSP, WB, WP | _] = GameState,
 
     % Get the list of waiting pieces using get_waiting_pieces
-    get_waiting_pieces_aux(WaitingPieces, GameState),
+    get_waiting_pieces(WaitingPieces, GameState),
 
     % Perform the conversion of waiting pieces based on the current player
     convert_waiting_pieces(Player, WaitingPieces, ConvertedWaitingPieces),
@@ -334,7 +327,7 @@ greedy_move_piece(GameState, NewGameState) :-
     [Board, _, _, Player, _, CSB, CSP, WB, WP | _] = GameState,
 
     % Get the list of waiting pieces using get_waiting_pieces
-    get_waiting_pieces_aux(WaitingPieces, GameState),
+    get_waiting_pieces(WaitingPieces, GameState),
 
     % Perform the conversion of waiting pieces based on the current player
     convert_waiting_pieces(Player, WaitingPieces, ConvertedWaitingPieces),
@@ -377,7 +370,7 @@ greedy_move_piece(GameState, NewGameState) :-
     [Board, _, _, Player, _, CSB, CSP, WB, WP | _] = GameState,
 
     % Get the list of waiting pieces using get_waiting_pieces
-    get_waiting_pieces_aux(WaitingPieces, GameState),
+    get_waiting_pieces(WaitingPieces, GameState),
 
 
     % Perform the conversion of waiting pieces based on the current player
