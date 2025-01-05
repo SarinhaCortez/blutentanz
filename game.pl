@@ -144,11 +144,11 @@ choose_move(GameState, 1, (Square, PlaceInSquare)) :-
 
     format_color(Player),
     write(', what square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
-    catch(read(SqInput), _, fail), 
+    read(SqInput), 
 
     nl,format_color(Player),
     write(', what symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
-    catch(read(Symbol), _, fail), nl,
+    read(Symbol), nl,
     get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, 1).
     
 % Predicate to construct a move for a human player
@@ -165,6 +165,7 @@ construct_move(GameState, Move, PieceGameState) :-
 
     member((PlaceInSquare, Square), Moves),
     get_input(Player, Input, Piece), format_color(Player),
+    format(' is moving piece ~w to x:~w y:~w ~n~n', [Input, Square, PlaceInSquare]),
     X is PlaceInSquare, 
     Y is Square.
 
@@ -487,7 +488,7 @@ is_current_piece(Piece, (Piece, _, _)).
 evaluate_position_change(blue, _, Y1, _, Y2, 10) :-
     Y2 =:= Y1 + 4.
 
-evaluate_position_change(blue, X1, Y1, X2, Y2, 5) :-
+evaluate_position_change(blue, _, Y1, X2, Y2, 5) :-
     Y2 =:= Y1,
     X2 > 1.
 
@@ -499,7 +500,7 @@ evaluate_position_change(pink, _, 0, _, Y2, 10) :-
 evaluate_position_change(pink, _, Y1, _, Y2, 10) :-
     Y2 =:= Y1 - 4.
 
-evaluate_position_change(pink, X1, Y1, X2, Y2, 5) :-
+evaluate_position_change(pink, _, Y1, X2, Y2, 5) :-
     Y2 =:= Y1,
     X2 < 2.
 
@@ -528,7 +529,7 @@ evaluate_spins(Spins, GameState , BestMove) :-
 
 % Evaluate individual spin based on how closer it brings pieces to edge, maximize player moves and diminish opponent moves
 
-evaluate_spin(Spin, GameState, NewGameState, Score) :-
+evaluate_spin(_Spin, GameState, NewGameState, Score) :-
     [Board, _, _, Player | _] = GameState,
     [Board, _, _, Opponent | _] = OppGameState,
     [NewBoard, _, _, Player | _] = NewGameState,

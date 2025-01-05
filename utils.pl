@@ -28,7 +28,7 @@ column_index('d', 4).
 column_index(A, Col) :- char_code(A, Code), Code >= 65, Code =< 68, Col is Code - 64.
 
 %based on board dimensions generate row number
-generate_rows(Dim) :-
+generate_rows(Dim, Rows, Cols) :-
     findall(X, between(1, Dim, X), Rows),
     findall(C, (member(R, Rows), column_index(C, R)), Cols).
 
@@ -371,12 +371,12 @@ format_color(X) :-
     print_in_color(white, X).      
 
 /*
-% Mapping row number to column character
+% Mapping row number to column character. Ideal implementation. Did not have time to integrate
 column_index(Char, Row) :-
     integer(Row),   % Ensure Row is instantiated as an integer
     Code is 96 + Row,  
     char_code(Char, Code).  
-    Ideal implementation. Did not have time to integrate
+    
 
 in code:
     %length(Board, L),
