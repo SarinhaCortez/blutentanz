@@ -34,13 +34,12 @@ validate_difficulty(_, _) :-
     fail.
 
 % Start player selection IO
+choose_start_player(_, StartPlayer) :- StartPlayer = blue.
 choose_start_player(1, StartPlayer) :-
     repeat, 
     write('\nSTART PLAYER  (Input 1 or 2, then press ENTER, . ,ENTER):\n\n 1. Blue\n 2. Pink \n\nStart Player:'),
     catch(read(Input), _, fail),
     validate_start_player(Input,StartPlayer), !.
-choose_start_player(_, StartPlayer) :- StartPlayer = blue.
-
 
 validate_start_player(Input, StartPlayer) :-
     integer(Input),
