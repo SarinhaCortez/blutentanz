@@ -269,15 +269,9 @@ greedy_move(GameState, FinalGameState) :-
     % Retrieve the current board and player from the game state
     GameState = [_, _, _, Player| _], 
     
-     
-    %length(Board, L),
-    Dim = 4,
+  
     % Generate all possible spins and evaluate them
-    generate_rows_cols(Dim, Rows, Cols),
-    append(Rows, Cols, Spins),
-    
-    % Generate all possible spins and evaluate them
-    %Spins = [1,2,3,4,'a','b','c','d'],
+    Spins = [1,2,3,4,'a','b','c','d'],
     % Evaluate all possible spins and find the best one
     evaluate_spins(Spins, GameState , BestMove),
 
