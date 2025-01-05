@@ -350,10 +350,7 @@ random_move(GameState, (-1,0,0), GameState) :-
 greedy_move(GameState, FinalGameState) :-
     GameState = [_, _, _, Player| _], 
     
-  
-    % Generate all possible spins and evaluate them
     Spins = [1,2,3,4,'a','b','c','d'],
-    % Evaluate all possible spins and find the best one
     evaluate_spins(Spins, GameState , BestMove),
 
     spin(BestMove, GameState, SpunGameState, 1),
