@@ -576,11 +576,15 @@ count_closer_positions(CurrentPositions, NewPositions, Player, Score) :-
 
     sum_list(Scores, Score).
 
+% VALUE PREDICATE
+
 value(GameState, Player, Value) :-
     [Board | _] = GameState,
     [Board, _, _, Player | _] = TempGameState
     get_piece_coordinates(TempGameState, PlayerCoords),
     calculate_score(PlayerCoords, Player, Value).
+
+% Count Score based on closeness to winning edge
 
 calculate_score([], _, 0).  
 calculate_score([(_, _, Y) | X], blue, TotalScore) :-
