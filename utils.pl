@@ -377,4 +377,12 @@ column_index(Char, Row) :-
     Code is 96 + Row,  
     char_code(Char, Code).  
     Ideal implementation. Did not have time to integrate
+
+in code:
+    %length(Board, L),
+    Dim = 4,
+    % Generate all possible spins., squares, input validation
+    generate_rows_cols(Dim, Rows, Cols),
+    append(Rows, Cols, Spins),
+    
 */

@@ -197,8 +197,7 @@ game_loop(GameState) :-
 
 game_loop(GameState) :-
     [_, _, 2, _, _, _, _, _, _, bot] = GameState, 
-
-    write('Bot turn, greedy algorithm\n'), nl,
+    write('Bot turn, hard.\n'), nl,
     print_turn(GameState),
     display_game(GameState),
 
@@ -211,8 +210,7 @@ game_loop(GameState) :-
 % Case: Random Bot Turn
 game_loop(GameState):-
     [_, _, 1, _, _, _, _, _, _, bot] = GameState,
-
-    write('Bot turn, with random\n'), nl,
+    write('Bot turn, easy.\n'), nl,
     print_turn(GameState),
 
     random_moves(GameState, Moves, WGameState),!,
@@ -352,10 +350,10 @@ random_move(GameState, (-1,0,0), GameState) :-
 greedy_move(GameState, FinalGameState) :-
     GameState = [_, _, _, Player| _], 
     
-    Dim = 4,
-    generate_rows_cols(Dim, Rows, Cols),
-    append(Rows, Cols, Spins),
-    
+  
+    % Generate all possible spins and evaluate them
+    Spins = [1,2,3,4,'a','b','c','d'],
+    % Evaluate all possible spins and find the best one
     evaluate_spins(Spins, GameState , BestMove),
 
     spin(BestMove, GameState, SpunGameState, 1),
