@@ -144,11 +144,11 @@ choose_move(GameState, 1, (Square, PlaceInSquare)) :-
 
     format_color(Player),
     write(', what square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
-    read(SqInput), 
+    catch(read(SqInput), _, fail), 
 
     nl,format_color(Player),
     write(', what symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
-    read(Symbol), nl,
+    catch(read(Symbol), _, fail), nl,
     get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, 1).
     
 % Predicate to construct a move for a human player
@@ -165,7 +165,6 @@ construct_move(GameState, Move, PieceGameState) :-
 
     member((PlaceInSquare, Square), Moves),
     get_input(Player, Input, Piece), format_color(Player),
-    format(' is moving piece ~w to x:~w y:~w ~n~n', [Input, Curr_X, Curr_Y, Square, PlaceInSquare]),
     X is PlaceInSquare, 
     Y is Square.
 
