@@ -58,11 +58,11 @@ valid_coordinate((X, Y)) :-
 %getters
 
 get_waiting_pieces(WaitingPieces, GameState) :-
-    [Board, _, _, blue, _, CSB,_, WB|_] = GameState,
+    [_, _, _, blue, _, CSB,_, WB|_] = GameState,
     get_waiting_pieces(WaitingPieces, blue, WB, CSB).
 
 get_waiting_pieces(WaitingPieces, GameState) :-
-    [Board, _, _, pink, _, _,CSP,_, WP|_] = GameState,
+    [_, _, _, pink, _, _,CSP,_, WP|_] = GameState,
     get_waiting_pieces(WaitingPieces, pink, WP, CSP).
 get_waiting_pieces(ListOfPieces, blue, WB, CSB) :-
     max(WB, 1, Min),

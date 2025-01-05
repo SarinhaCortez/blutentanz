@@ -128,10 +128,9 @@ choose_move(GameState, 1, (Square, PlaceInSquare)) :- %internally, square is y a
 % Predicate to construct a move for a human player
 construct_move(GameState, Move, PieceGameState) :-
     Move = (X, Y),
-    [Board | _] = GameState,
+    [Board, _,_, Player | _] = GameState,
     repeat,
-    choose_piece(GameState, PieceGameState, Piece, (Curr_X, Curr_Y)),
-    [_, _, _, Player | _ ] = PieceGameState,
+    choose_piece(GameState, PieceGameState, _Piece, (Curr_X, Curr_Y)),
     choose_move(PieceGameState, 1, (Square, PlaceInSquare)),
     valid_moves_piece(Curr_X, Curr_Y, Player, Board, Moves),
     member((PlaceInSquare, Square), Moves),
@@ -269,7 +268,7 @@ random_move(GameState, (-1,0,0), GameState) :-
 % Define the greedy move that selects the best spin based on the criteria.
 greedy_move(GameState, FinalGameState) :-
     % Retrieve the current board and player from the game state
-    GameState = [Board, _, _, Player, _, Csb, Csp, _, _, _], 
+    GameState = [_, _, _, Player| _], 
     
     % Generate all possible spins and evaluate them
     Spins = [1,2,3,4,'a','b','c','d'],
@@ -305,7 +304,7 @@ convert_waiting_pieces(pink, WaitingPieces, ConvertedPieces) :-
 
 
 greedy_move_piece(GameState, NewGameState) :-
-    [Board, _, _, Player, _, CSB, CSP, WB, WP | _] = GameState,
+    [_, _, _, Player | _] = GameState,
 
     % Get the list of waiting pieces using get_waiting_pieces
     get_waiting_pieces(WaitingPieces, GameState),
@@ -324,7 +323,7 @@ greedy_move_piece(GameState, NewGameState) :-
 
 
 greedy_move_piece(GameState, NewGameState) :-
-    [Board, _, _, Player, _, CSB, CSP, WB, WP | _] = GameState,
+    [Board, _, _, Player | _] = GameState,
 
     % Get the list of waiting pieces using get_waiting_pieces
     get_waiting_pieces(WaitingPieces, GameState),
@@ -367,7 +366,7 @@ greedy_move_piece(GameState, NewGameState) :-
 
 
 greedy_move_piece(GameState, NewGameState) :-
-    [Board, _, _, Player, _, CSB, CSP, WB, WP | _] = GameState,
+    [_, _, _, Player | _] = GameState,
 
     % Get the list of waiting pieces using get_waiting_pieces
     get_waiting_pieces(WaitingPieces, GameState),
@@ -434,7 +433,6 @@ is_current_piece(Piece, (Piece, _, _)).
 % Evaluate all possible spins
 evaluate_spins(Spins, GameState , BestMove) :-
 
-    GameState = [Board, _, _, Player, _, Csb, Csp | _], 
     % For each spin, evaluate the three criteria and assign a score
     findall(
         Score-Spin,
