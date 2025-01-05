@@ -276,11 +276,9 @@ greedy_move(GameState, FinalGameState) :-
     evaluate_spins(Spins, GameState , BestMove),
 
     % Apply the best move to the board and update the game state
-    spin(BestMove, GameState, SpunGameState, Success),
+    spin(BestMove, GameState, SpunGameState, 1),
 
     format_color(Player), write(' spinned!\n'),
-
-    Success == 1,
 
     display_game(SpunGameState),
 
@@ -438,8 +436,7 @@ evaluate_move(GameState, NewGameState, Player, Score) :-
     include(is_current_piece(CurrentPiece), NewPositions, FilteredNewPositions),
     count_closer_positions(FilteredCurrentPositions, FilteredNewPositions, Player, Score).
 
-is_current_piece(CurrentPiece, (Piece, _, _)) :-
-    Piece == CurrentPiece.
+is_current_piece(Piece, (Piece, _, _)).
 
 % Evaluate all possible spins
 evaluate_spins(Spins, GameState , BestMove) :-
