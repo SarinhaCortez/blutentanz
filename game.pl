@@ -1,4 +1,3 @@
-
 /*USE MEANINGFUL NAMES FOR PREDICATES AND ARGUMENTS. 
 TRY TO WRITE CODE THAT ‘LOOKS DECLARATIVE’ AND AVOID USING ‘IMPERATIVE-LOOKING’ 
 CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE 
@@ -6,30 +5,39 @@ CONSTRUCTIONS (E.G., IF-THEN-ELSE CLAUSES). TRY TO WRITE EFFICIENT CODE
 
 :- consult(io).
 
+% Predicate to get valid moves for a piece at position (0, 0) for blue player
 valid_moves_piece(0, 0, blue, Board, Moves) :-
-    PossibleMoves = [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)],
-    include(is_valid_move(blue, Board), PossibleMoves, Moves).
+    include(is_valid_move(blue, Board), [(1, 1), (1, 2), (1, 3), (1, 4), (2, 1), (2, 2), (2, 3), (2, 4)], Moves).
+
+% Predicate to get valid moves for a piece at position (0, 0) for pink player
 valid_moves_piece(0, 0, pink, Board, Moves) :-
-    PossibleMoves = [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)],
-    include(is_valid_move(pink, Board), PossibleMoves, Moves).
+    include(is_valid_move(pink, Board), [(3, 13), (3, 14), (3, 15), (3, 16), (4, 13), (4, 14), (4, 15), (4, 16)], Moves).
+
+% Predicate to get valid moves for a piece at position (1, Y) for any player
 valid_moves_piece(1, Y, Player, Board, Moves) :-
     findall((X, ResY), 
             (member((X, ExprY), [(2, Y-1), (2, Y), (3, Y-4), (3, Y)]), 
             ResY is ExprY),
             PossibleMoves),
     include(is_valid_move(Player, Board), PossibleMoves, Moves).
+
+% Predicate to get valid moves for a piece at position (2, Y) for any player
 valid_moves_piece(2, Y, Player, Board, Moves) :-
     findall((X, ResY), 
             (member((X, ExprY), [(1, Y+1), (1, Y), (4, Y-4), (4, Y)]), 
             ResY is ExprY),
             PossibleMoves),
     include(is_valid_move(Player, Board), PossibleMoves, Moves).
+
+% Predicate to get valid moves for a piece at position (3, Y) for any player
 valid_moves_piece(3, Y, Player, Board, Moves) :-
     findall((X, ResY), 
             (member((X, ExprY), [(1, Y), (4, Y), (4, Y-1), (1, Y+4)]), 
             ResY is ExprY),
             PossibleMoves),
     include(is_valid_move(Player, Board), PossibleMoves, Moves).
+
+% Predicate to get valid moves for a piece at position (4, Y) for any player
 valid_moves_piece(4, Y, Player, Board, Moves) :-
     findall((X, ResY), 
             (member((X, ExprY), [(2, Y+4), (3, Y), (2, Y), (3, Y+1)]), 
@@ -37,20 +45,21 @@ valid_moves_piece(4, Y, Player, Board, Moves) :-
             PossibleMoves),
     include(is_valid_move(Player, Board), PossibleMoves, Moves).
 
+% Predicate to start the game
 play :-
-    %blutentanz,
+    blutentanz,
     choose_mode(Mod), !,
     choose_start_player(Mod, Player), !,
     choose_difficulty(Mod, Dif), !,
-    GameConfig = [Mod, Dif, Player], !,
-    initial_state(GameConfig, GameState),
+    initial_state([Mod, Dif, Player], GameState),
     display_game(GameState),
     game_loop(GameState).
 
-
+% Predicate to display the game state
 display_game(GameState) :- 
     print_board(GameState).
 
+% Predicate to initialize the game state
 initial_state(GameConfig, GameState) :-
     [3, Dif, Player] = GameConfig,!,
     board(Board),
@@ -61,28 +70,38 @@ initial_state(GameConfig, GameState) :-
     board(Board),
     shuffle_board(Board, ShuffledBoard),
     GameState = [ShuffledBoard, Mode, Dif, Player, -1, [], [], 5, 5, human], !.
-% game over - blue won
-game_over(GameState, Winner) :-
+
+% Predicate to check if the game is over and blue won
+game_over(GameState, blue) :-
     [_, _, _, blue, _, CFb , _ , _, _ ,_]  = GameState,
-    length(CFb, CSb),
-    CSb == 5, 
-    Winner = blue,
-    show_winner(blue).
+    length(CFb, 5).
 
-% game over - pink won
-game_over(GameState, Winner) :-
+% Predicate to check if the game is over and pink won
+game_over(GameState, pink) :-
     [_, _, _, pink, _,  _ , CFp , _, _ ,_] = GameState,
-    length(CFp, CSp),
-    CSp == 5,
-    Winner = pink,
-    show_winner(pink).
+    length(CFp, 5).
 
-% game over - display winner
-show_winner(Winner) :-
-    format_color(Winner),
-    write(' won!'),
-    nl.
+% Predicate to display the winner if blue won
+show_winner(blue) :-
+    repeat_format_color(23, '*'), nl,
+    repeat_format_color(23, '-'), nl, 
+    format_color('*'),
+    write(' '), format_color(blue), write(' won! Congrats! '),
+    format_color('*'), nl,
+    repeat_format_color(23, '-'), nl, 
+    repeat_format_color(23, '*'), nl.
 
+% Predicate to display the winner if pink won
+show_winner(pink) :-
+    repeat_format_color(23, '+'), nl,
+    repeat_format_color(23, '-'), nl, 
+    format_color('+'),
+    write(' '), format_color(pink), write(' won! Congrats! '), 
+    format_color('+'), nl,
+    repeat_format_color(23, '-'), nl, 
+    repeat_format_color(23, '+'), nl.
+
+% Predicate to get valid moves for all pieces in the game state
 valid_moves(GameState, ListOfMoves) :-
     get_piece_coordinates(GameState, PieceCoordinates),
     [Board, _, _, Player | _] = GameState,
@@ -94,19 +113,24 @@ valid_moves(GameState, ListOfMoves) :-
         ),
         ListOfMoves).
 
+% Predicate to choose a move for a human player
 choose_move(GameState, 1, (Square, PlaceInSquare)) :- %internally, square is y and place x
     [Board, _,_,Player |_] = GameState,
-    repeat, format_color(Player),
+    repeat, nl,
+    format_color(Player),
+    write(', you may choose your destination square using a combination of a lowercase row char (a to d) and a number (1 to 4). Ex: a4.\n'),
+    write('You may also choose an unnocupied symbol, that may be '), format_color('-'), write(' or '), format_color('*'),write(' if you are '),format_color(blue), write(', or '), format_color('-'), write(' or '), format_color('+'),write(' if you are '), format_color(pink),
+    write('.\nYou can only move your piece to adjacent symbols, orthogonally. If your input does not fulfill this requirements, you will be asked to input a new one.\n\n'),
+    format_color(Player),
     write(', what square do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(SqInput), 
     nl,format_color(Player),
     write(', what symbol do you want to move your piece to? (Input your choice, then press ENTER, . ,ENTER)'),
     read(Symbol), nl,
-    get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, Success), %square is col n
-    format('SQInput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]),
-    Success == 1. 
+    get_square_index(Board, SqInput, Symbol, Square, PlaceInSquare, 1), %square is col n
+    format('SQInput is ~w, get square index is x:~w, y:~w ~n', [SqInput, PlaceInSquare, Square]). 
 
-% Human vs. Human. Internally, square is y and place x
+% Predicate to construct a move for a human player
 construct_move(GameState, Move, PieceGameState) :-
     Move = (X, Y),
     [Board | _] = GameState,
@@ -123,11 +147,13 @@ construct_move(GameState, Move, PieceGameState) :-
     format('~w is moving from x:~w y:~w to x:~w y:~w ~n', [Player, Curr_X, Curr_Y, Square, PlaceInSquare]),
     X is PlaceInSquare, 
     Y is Square.
-% game_loop(+GameState)
+
+% Predicate to handle the game loop
+%game over
 game_loop(GameState):-
     game_over(GameState, Winner), !,
-    display_game(GameState),
     show_winner(Winner).
+%human turn
 game_loop(GameState) :-
     [_, _, _, _, _, _, _, _, _, human] = GameState,
     write('Human turn\n'), nl,
@@ -138,6 +164,7 @@ game_loop(GameState) :-
     call_construct_and_move(3, SpunGameState, FinalGameState), !,
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
+%computer turn with difficulty 2
 game_loop(GameState) :-
     [_, _, 2, _, _, _, _, _, _, bot] = GameState, % Difficulty 2
     write('Bot turn, greedy algorithm\n'), nl,
@@ -148,6 +175,7 @@ game_loop(GameState) :-
     display_game(FinalGameState),
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
+%computer turn with difficulty 1
 game_loop(GameState):-
     [_, _, 1, _, _, _, _, _, _, bot] = GameState, %dif1
     write('Bot turn, with random\n'), nl,
@@ -157,27 +185,31 @@ game_loop(GameState):-
     display_game(FinalGameState),
     switch_turn(FinalGameState, OtherPlayerGameState),
     game_loop(OtherPlayerGameState).
-clear_data :-
-    retractall(board(_)).
 
+
+
+% Predicate to execute a move
 move(GameState, Move, NewGameState) :-
     Move = (X, Y), write('Move is '), print(Move), nl, 
     [Board, _, _, _, CurrPiece | _] = GameState,
     get_x_y(CurrPiece, Old_X, Old_Y, Board),!, write('Old x is '), print(Old_X), write(' Old y is '), print(Old_Y), nl,
-    clean_square(Old_X, Old_Y, Board, TempBoard),!, write('cleaned square\n'),
-    nth1(Y, TempBoard, Square), !, write('got square\n'),
+    clean_square(Old_X, Old_Y, Board, TempBoard),!,
+    nth1(Y, TempBoard, Square), !,
     replace_in_square(Square, X, CurrPiece, NewSquare), !,
     replace_in_board(TempBoard, Y, NewSquare, NewBoard),!,
     replace_board(GameState, NewBoard, TempState), 
-    update_score(TempState, X, Y, NewGameState), 
-    write('exiting move\n'), !.
+    update_score(TempState, X, Y, NewGameState), !.
 
-
+% Predicate to call construct and move
 call_construct_and_move(0, GameState, GameState) :- !.
+call_construct_and_move(N, GameState, GameState) :-
+    N > 0, 
+    write('If you don\'t want to make more moves, you can stop now by pressing \'s\'. If you want to continue, press \'c\'. (after your choice) press ENTER, \'.\', ENTER):'),
+    read('s').
 call_construct_and_move(N, GameState, FinalGameState) :-
-    N > 0,repeat, write('here before construct \n'),!,
+    N > 0, !, 
+    repeat,
     construct_move(GameState, (NewX, NewY), PieceGameState), 
-    write('passed construct \n'),!,
     format('Move chosen: (~w, ~w)~n', [NewX, NewY]),
     move(PieceGameState,(NewX, NewY), MovedGameState),
     write('Exited move successfuly!'),
@@ -190,10 +222,7 @@ call_construct_and_move(_N, GameState, GameState) :-
     has_no_moves(Moves), 
     format_color(Player), write(' ran out of possible moves. Switching turn.\n'),!.
 
-
-% HEURISTIC START
-
-
+% Predicate to evaluate rotations
 evaluate_rotations([], _, _, _, BestValue, (null, BestValue)). % No rotations left.
 evaluate_rotations([H | T], GameState, Depth, Player, Alpha, (BestMove, BestValue)) :-
     spin(H, Board, NewBoard),
@@ -202,10 +231,9 @@ evaluate_rotations([H | T], GameState, Depth, Player, Alpha, (BestMove, BestValu
     minimax(RotatedGameState, NewDepth, Player, _, Value),
     update_best(H, Value, Alpha, T, (BestMove, BestValue)).
 
-call_move(GameState, [], FinalGameState) :-
-    FinalGameState = GameState, !.
-call_move(GameState, [(-1,0,0)|_], FinalGameState) :-
-    FinalGameState = GameState, !.
+% Predicate to call a move
+call_move(GameState, [], GameState) :-  !.
+call_move(GameState, [(-1,0,0)|_], GameState) :- !.
 call_move(GameState, [H|T], FinalGameState) :-
     select_w(GameState, W), W >= 0,
     H = (Piece, X, Y), Move = (X, Y),
@@ -214,15 +242,14 @@ call_move(GameState, [H|T], FinalGameState) :-
     move(PieceGameState, Move, MovedGameState),
     display_game(MovedGameState),
     call_move(MovedGameState, T, FinalGameState).
-%unused. coisas pra a heuristica. não usando, apaga-se (daqui, mais 120 linhas)
-% Choosing Heuristic
+
+% Predicate to evaluate rotation value
 rotation_value(GameState, SortedResult, TotalBenefit) :-
     [Board, Mod, Dif, Player, Piece, CFB, CFP, WB, WP, Type] = GameState,
     opponent(Player, Opponent),
     [Board, Mod, Dif, Opponent, Piece, CFB, CFP, WB, WP, Type]= OpponentGameState,
     get_piece_coordinates(GameState, PlayerPieceCoordinates),
     valid_moves(GameState, PInitMoves), 
-    %PInitMoves = [FirstMove|_],
     remove_duplicates(PInitMoves, PlInitMoves),
     print(PlInitMoves), nl,        
     valid_moves(OpponentGameState, OInitMoves),  remove_duplicates(OInitMoves, OpInitMoves),
@@ -251,7 +278,8 @@ rotation_value(GameState, SortedResult, TotalBenefit) :-
     pack_results(PlayerResults, OpponentResults, Result),
     calculate_benefits(Result, PlayerStartScoreMoves, OpponentStartScoreMoves, TotalBenefit),
     sort_by_benefit(Result, SortedResult).
-% Sort the results by benefit
+
+% Predicate to sort results by benefit
 sort_by_benefit(Result, SortedResult) :-
     findall(
         (Benefit, MoveLength, Index, Moves),
@@ -270,6 +298,8 @@ sort_by_benefit(Result, SortedResult) :-
         member((_Benefit, _MoveLength, Index, Moves), SortedResultsWithKeys),
         SortedResult
     ).
+
+% Predicate to calculate benefits
 calculate_benefits(Result, PlayerStartScoreMoves, OpponentStartScoreMoves, TotalBenefit) :-
     findall(
         Benefit, 
@@ -285,8 +315,7 @@ calculate_benefits(Result, PlayerStartScoreMoves, OpponentStartScoreMoves, Total
     ),
     sum_list(Benefits, TotalBenefit).
 
-
-% Comparison of rotation benefits
+% Predicate to compare rotation benefits
 compare_rotation_benefits(CurrScoreMoves, CurrStartScoreMoves, OpponentScoreMoves, OpponentStartScoreMoves, Benefit) :-
     length(CurrScoreMoves, CurrScoreCount),
     length(CurrStartScoreMoves, CurrStartCount),
@@ -295,7 +324,8 @@ compare_rotation_benefits(CurrScoreMoves, CurrStartScoreMoves, OpponentScoreMove
     length(OpponentStartScoreMoves, OpponentStartCount),
     OpponentDelta is OpponentScoreCount - OpponentStartCount,
     Benefit is PlayerDelta - OpponentDelta.
-% Combining results of player and opponent
+
+% Predicate to pack results of player and opponent
 pack_results([], [], []).
 pack_results([(Index, Moves, PlayerScoreMoves) | PlayerTail], 
                 [(Index, Moves, OpponentScoreMoves) | OpponentTail], 
@@ -332,9 +362,8 @@ player_role(pink, min_player).
 random_moves(GameState, Moves, NewGameState) :-
     [Board, _, _, Player | _] = GameState,
     display_game(GameState),
-    spin(0, Board, SpunBoard, Success),
+    spin(0, Board, SpunBoard, 1),
     format_color(Player), write(' spinned!\n'),
-    Success == 1,
     replace_board(GameState, SpunBoard, SpunGameState),
     display_game(SpunGameState),
     random_move(SpunGameState, Move1, GameState1), !,
@@ -356,24 +385,20 @@ random_move(GameState, Move, NewGameState) :-
     replace_current_piece_waiting_pieces(GameState, NewW, Piece, PieceGameState),
     move(PieceGameState, RandomMove, NewGameState).
 random_move(GameState, Move, NewGameState) :-
-    [Board, _, _, Player | _] = GameState,
-    select_w(GameState, Player, W), 
-    (W = 0; \+ valid_moves_piece(0, 0, Player, Board, Moves)), 
+    select_w(GameState, 0), 
     valid_moves(GameState, Moves),
     \+ has_no_moves(Moves), !,
     random_member(Move, Moves),
     Move = (P, X, Y), M = (X, Y),
-    replace_current_piece_waiting_pieces(GameState, W, P, PieceGameState),
+    replace_current_piece_waiting_pieces(GameState, 0, P, PieceGameState),
     move(PieceGameState, M, NewGameState).
-random_move(GameState, Move, NewGameState) :-
+random_move(GameState, (-1,0,0), GameState) :-
     [Board, _, _, Player | _] = GameState,
     valid_moves_piece(0, 0, Player, Board, Moves),
-    has_no_moves(Moves), !,
-    Move = (-1,0,0), NewGameState = GameState.
-random_move(GameState, Move, NewGameState) :-
+    has_no_moves(Moves), !.
+random_move(GameState, (-1,0,0), GameState) :-
     valid_moves(GameState, Moves),
-    has_no_moves(Moves), !,
-    Move = (-1,0,0), NewGameState = GameState.
+    has_no_moves(Moves), !.
 
 %greedy
 
