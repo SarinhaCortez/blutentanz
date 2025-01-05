@@ -561,3 +561,38 @@ count_closer_positions(CurrentPositions, NewPositions, Player, Score) :-
 
     sum_list(Scores, Score).
 
+% VALUE PREDICATE
+
+value(GameState, Player, Value) :-
+    [Board | _] = GameState,
+    [Board, _, _, Player | _] = TempGameState
+    get_piece_coordinates(TempGameState, PlayerCoords),
+    calculate_score(PlayerCoords, Player, Value).
+
+% Count Score based on closeness to winning edge
+
+calculate_score([], _, 0).  
+calculate_score([(_, _, Y) | X], blue, TotalScore) :-
+    score_for_y(blue, Y, Score),
+    calculate_score(X, blue, RemScore),
+    TotalScore is Score + RemScore.
+
+score_for_y(blue, Y, 1) :- Y >= 1, Y =< 4.
+score_for_y(blue, Y, 5) :- Y >= 5, Y =< 8.
+score_for_y(blue, Y, 10) :- Y >= 9, Y =< 12.
+score_for_y(blue, Y, 15) :- Y >= 13, Y =< 16.
+
+calculate_score([(_, _, Y) | X], pink, TotalScore) :-
+    score_for_y(pink, Y, Score),
+    calculate_score(X, pink, RemScore),
+    TotalScore is Score + RemScore.
+    
+score_for_y(pink, Y, 15) :- Y >= 1, Y =< 4.
+score_for_y(pink, Y, 10) :- Y >= 5, Y =< 8.
+score_for_y(pink, Y, 5) :- Y >= 9, Y =< 12.
+score_for_y(pink, Y, 1) :- Y >= 13, Y =< 16.
+
+
+
+
+
