@@ -234,7 +234,7 @@ game_loop(GameState) :-
     print_turn(GameState),
     display_game(GameState),
 
-    greedy_move(GameState, FinalGameState),
+    choose_move(GameState, 2, FinalGameState),
     display_game(FinalGameState),
 
     switch_turn(FinalGameState, OtherPlayerGameState),
@@ -331,7 +331,7 @@ random_moves(GameState, Moves, NewGameState) :-
 
 % Turn Structure
 
-greedy_move(GameState, FinalGameState) :-
+choose_move(GameState, 2, FinalGameState) :-
     GameState = [_, _, _, Player| _], 
     
     Spins = [1,2,3,4,'a','b','c','d'],
