@@ -321,7 +321,6 @@ random_moves(GameState, Moves, NewGameState) :-
     display_game(SpunGameState),
 
     choose_move(SpunGameState, 1, Move1, GameState1), !,
-    
     choose_move(GameState1, 1, Move2, GameState2), !,
     choose_move(GameState2, 1, Move3, MovedGameState),!,
 
@@ -521,7 +520,7 @@ evaluate_spin(_Spin, GameState, NewGameState, Score) :-
     [NewBoard, _, _, Opponent | _] = NewOppGameState,
     opponent(Player, Opponent),
 
-    value(GameState, NewGameState, EdgeMoveScore),
+    closer_to_edge(GameState, NewGameState, EdgeMoveScore),
     
     valid_moves(GameState, PlayerMovesBefore),
     valid_moves(OppGameState, OpponentMovesBefore),
@@ -540,7 +539,7 @@ evaluate_spin(_Spin, GameState, NewGameState, Score) :-
 
 % Predicate to check if pieces are closer to scoring edge in new game state
 
-value(GameState, NewGameState, Score) :-
+closer_to_edge(GameState, NewGameState, Score) :-
     [_,_,_,Player | _] = GameState,
 
     get_piece_coordinates(GameState, CurrentPositions),
@@ -565,7 +564,7 @@ count_closer_positions(CurrentPositions, NewPositions, Player, Score) :-
 
 value(GameState, Player, Value) :-
     [Board | _] = GameState,
-    [Board, _, _, Player | _] = TempGameState
+    [Board, _, _, Player | _] = TempGameState,
     get_piece_coordinates(TempGameState, PlayerCoords),
     calculate_score(PlayerCoords, Player, Value).
 
