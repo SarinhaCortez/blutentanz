@@ -1,4 +1,4 @@
 # Blütentanz
 
-This is a full-implemented version of the chess-inspired board game, Blütentanz, in Prolog.
+Scored **18/20**. This is a full-implemented version of the chess-inspired board game, Blütentanz, in Prolog. 
 
