@@ -1,5 +1,7 @@
 ﻿**Blütentanz**
 
+This project was done for the course of PFL (Logical and Functional Programming) at FEUP in 2024/2025 and scored a 18/20, an A in the american scale.
+
 **Installation and Execution**
 
 In order to install the game, one must access our **src** folder by downloading and unzipping the provided **PFL\_TP2\_T11\_Blutentanz\_1.zip** zip folder. **Assuming that SICStus Prolog 4.9 is installed** in the machine, either the SICStus terminal can be opened or it can be started on the operating system’s own terminal. We strongly encourage the latter because it supports the display of different colors, which add much to the intuitiveness and appeal of our game, but it can run on the former without any problems. With SICStus started, one must simply insert the following command: **consult(‘[PATH TO game.pl INSIDE OF SRC FOLDER]’). .** Please make sure to either **escape the backward slashes** in the path by doubling them (\\) or **replace them with forward slashes** (/). Afterwards, simply type **play.** and hit enter, which will start the game.
