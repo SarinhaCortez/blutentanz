@@ -48,7 +48,9 @@ Internal Game State Representation
 
 Our Board has an internal representation that differs significantly from ![](Aspose.Words.173ac591-c4e8-46c6-a830-613bd281832c.004.png)the external one. The outer list is a list of the squares in the board. The inner lists are the squares,with indices ordered as depicted below. 
 
-For instance, when a piece moves to an adjacent upper or ![](Aspose.Words.173ac591-c4e8-46c6-a830-613bd281832c.005.png)![](Aspose.Words.173ac591-c4e8-46c6-a830-613bd281832c.006.png)![](Aspose.Words.173ac591-c4e8-46c6-a830-613bd281832c.007.png)lower square, its Y increases or decreases by 4. If the square is on the left, Y increases by 1. Depending on Y, a player might be able to go, from an X of 1, to an X of 3 or 2. So, when a square is spun, what happens to the list is not a list rotation. After a clockwise spin, a square [1,2,3,4] becomes [3,1,2,4]. 
+![](Aspose.Words.173ac591-c4e8-46c6-a830-613bd281832c.005.png)![](Aspose.Words.173ac591-c4e8-46c6-a830-613bd281832c.006.png)![](Aspose.Words.173ac591-c4e8-46c6-a830-613bd281832c.007.png)
+
+For instance, when a piece moves to an adjacent upper or lower square, its Y increases or decreases by 4. If the square is on the left, Y increases by 1. Depending on Y, a player might be able to go, from an X of 1, to an X of 3 or 2. So, when a square is spun, what happens to the list is not a list rotation. After a clockwise spin, a square [1,2,3,4] becomes [3,1,2,4]. 
 
 This board has the symbols **-**, for **neutral** blossoms, **+**, for **pink** blossoms, and **\*** for **blue** blossoms. They are disposed on rows 1 to 4 and columns A to D. **Pink pieces** are represented **internally** as numbers from **0 to 4** and **blue pieces** are represented as numbers from **5 to 9**, **externally both can be seen as 1 to 5**. This provides an intuitive way for the player to move and keep track of their pieces.
 
